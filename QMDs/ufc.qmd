@@ -1,0 +1,11 @@
+---
+title: "UFC Champ predictions"
+date: 2026-01-15
+format: html
+---
+
+
+```{python}
+
+```
+
