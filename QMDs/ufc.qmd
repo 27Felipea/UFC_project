@@ -4,12 +4,15 @@ date: 2026-01-15
 format: html
 ---
 dataset is 4 years old
+
+
 reading and printing out the first 6 rows of the dataset
 
 ```{python}
 import pandas as pd
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly as px
 print("Hello World")
 ufc = pd.read_csv(r"data\ufc_champs_final.csv")
 print(ufc.head())
@@ -18,7 +21,13 @@ print(ufc.head())
 As we can see there are a 121 variables so we will try to narrow that down, but first lets do some exploratory data analysis.
 
 ```{python}
-
+sns.set_theme(style = "whitegrid")
+plt.figure(figsize = (8, 5))
+sns.countplot(data = ufc, x = "title_bout", palette = "viridis")
+plt.title("title vs non-title fights")
+plt.xlabel("distribution of title vs non-title fights")
+plt.ylabel("number of fights")
+plt.show()
 ```
 
 ```{python}
