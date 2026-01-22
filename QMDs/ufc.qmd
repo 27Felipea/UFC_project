@@ -3,9 +3,31 @@ title: "UFC Champ predictions"
 date: 2026-01-15
 format: html
 ---
-
+dataset is 4 years old
+reading and printing out the first 6 rows of the dataset
 
 ```{python}
+import pandas as pd
+import matplotlib as plt
+import seaborn as sns
 print("Hello World")
+ufc = pd.read_csv(r"data\ufc_champs_final.csv")
+print(ufc.head())
 ```
 
+As we can see there are a 121 variables so we will try to narrow that down, but first lets do some exploratory data analysis.
+
+```{python}
+
+```
+
+```{python}
+#champ_counts = ufc.query("") filter
+#champ_counts = ufc["R_fighter"].value_counts()
+#champ_counts_b = ufc["B_fighter"].value_counts()
+#print(champ_counts, champ_counts_b)
+#set_a = set(ufc["R_fighter"])
+#set_b = set(ufc["B_fighter"])
+#total_fights = set_a.intersection(set_b)
+#print(total_fights)
+```
