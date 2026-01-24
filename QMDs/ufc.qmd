@@ -4,9 +4,9 @@ date: 2026-01-15
 format: html
 jupyter: python3
 ---
-This dataset contains information on UFC fights that had a champion participating. This dataset is 4 years old so what I would like to do is create a model, perhaps a simple one, that will be used to predict championship title matches that have happened since and upcoming bouts. To challenge myself further I wil try to make useful vizualizations and will be using python to throughout this project including using new packages such as matplotlib, seaborn and plotly (I have minimial experience with pandas).
+This dataset contains information on UFC fights that had a champion participating. This dataset is 4 years old so what I would like to do is create a model, perhaps a simple one, that will be used to predict championship title matches that have happened since and upcoming bouts. To challenge myself further I wil try to make **USEFUL** vizualizations and will be using python to throughout this project including using new packages such as matplotlib, seaborn and plotly (I have minimial experience with pandas).
 
-First lets load in these packages and our [UFC dataset](https://www.kaggle.com/datasets/akouaorsot/ufc-champions-fights/data) from kaggle
+First lets load in these packages and our [UFC dataset](https://www.kaggle.com/datasets/akouaorsot/ufc-champions-fights/data) from kaggle and take a look at some of the first rows of the dataset
 
 ```{python}
 import os
@@ -20,25 +20,29 @@ import plotly.express as px
 print(ufc.head())
 ```
 
-As we can see there are a 121 variables so we will try to narrow that down, but first lets do some exploratory data analysis.
+As we can see there are a 121 variables so we need to consider whether there are variables that are unnecessary for our purposes such as significant strikes as we are going to use our model to try and predict future title bouts and until the bout is over we do not know these quantites. First lets take a look at the counts of NAs in each variable in descending order, this is implemented in the following code chunk:
 
+```{python}
+na_counts = ufc.isna().sum().sort_values(ascending=False)
+print(na_counts)
+```
+
+As we can see there are numerous variables that have considerable missing data especially these columns defining one of the fighters respective rank during the dates of the bouts which makes sense as each fighter that is not a champion at the time of the respective bout will only have 1 rank in 1 weight class. Notice we have a weightclass column so can we collapse the ranks into 1 column that gives their rank and we already would know their weightclass from the weightclass column. 
+
+```{python}
+# melt() to create a rank column as we know their weight class from the weight class column
+```
+
+Something worth contemplating is whether we only want to take into consideration championship bouts lets take a look at the distribution of championship vs nonchampionship bouts:
 ```{python}
 sns.set_theme(style = "whitegrid")
 plt.figure(figsize = (8, 5))
 sns.countplot(data = ufc, x = "title_bout", palette = "viridis")
-plt.title("title vs non-title fights")
-plt.xlabel("distribution of title vs non-title fights")
+plt.title("non-title vs title fights")
+plt.xlabel("distribution of non-title vs title fights")
 plt.ylabel("number of fights")
 plt.show()
 ```
 
-```{python}
-#champ_counts = ufc.query("") filter
-#champ_counts = ufc["R_fighter"].value_counts()
-#champ_counts_b = ufc["B_fighter"].value_counts()
-#print(champ_counts, champ_counts_b)
-#set_a = set(ufc["R_fighter"])
-#set_b = set(ufc["B_fighter"])
-#total_fights = set_a.intersection(set_b)
-#print(total_fights)
-```
+
+
