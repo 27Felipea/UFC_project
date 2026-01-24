@@ -27,10 +27,24 @@ na_counts = ufc.isna().sum().sort_values(ascending=False)
 print(na_counts)
 ```
 
-As we can see there are numerous variables that have considerable missing data especially these columns defining one of the fighters respective rank during the dates of the bouts which makes sense as each fighter that is not a champion at the time of the respective bout will only have 1 rank in 1 weight class. Notice we have a weightclass column so can we collapse the ranks into 1 column that gives their rank and we already would know their weightclass from the weightclass column. 
+As we can see there are numerous variables that have considerable missing data especially these columns defining one of the fighters respective rank during the dates of the bouts which makes sense as each fighter that is not a champion at the time of the respective bout will only have 1 rank in 1 weight class (out of 12). Notice we have a weightclass column so can we collapse the ranks into 1 column that gives their rank and we already would know their weightclass from the weightclass column. Luckily I just noticed there is a column that already does this so we can drop 24 variables, but if there was no column that did this we would be able to use python's version of pivot longer with the melt function collapsing the columns into one after filtering them with some form of regular expression. 
 
 ```{python}
-# melt() to create a rank column as we know their weight class from the weight class column
+#ufc_subset_drop = ufc.filter(regex="_rank")
+#ufc_subset_drop = ufc_subset_drop.drop(columns = ["B_match_weightclass_rank", "R_match_weightclass_rank", "B_Pound-for-Pound_rank", "better_rank", "R_Pound-for-Pound_rank"]) 
+#ufc_subset_keep = [f for f in ufc if f not in ufc_subset_drop]
+# With the code above we have a subset that has selected the 24 columns of interest
+
+#ufc_subset = ufc.melt(id_vars = ufc_subset_keep,
+#                    value_cars = ufc_subset_keep,
+#                    var_name = "weight_class_rank",
+#                    value_name = "rank")
+```
+
+The code above is an implementation of using the melt function for the purpose stated above. Instead we can just drop the 24 variables as shown in the following code chunk.
+
+```{python}
+
 ```
 
 Something worth contemplating is whether we only want to take into consideration championship bouts lets take a look at the distribution of championship vs nonchampionship bouts:
