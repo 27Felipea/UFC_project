@@ -2,19 +2,21 @@
 title: "UFC Champ predictions"
 date: 2026-01-15
 format: html
+jupyter: python3
 ---
-dataset is 4 years old
+This dataset contains information on UFC fights that had a champion participating. This dataset is 4 years old so what I would like to do is create a model, perhaps a simple one, that will be used to predict championship title matches that have happened since and upcoming bouts. To challenge myself further I wil try to make useful vizualizations and will be using python to throughout this project including using new packages such as matplotlib, seaborn and plotly (I have minimial experience with pandas).
 
-
-reading and printing out the first 6 rows of the dataset
+First lets load in these packages and our [UFC dataset](https://www.kaggle.com/datasets/akouaorsot/ufc-champions-fights/data) from kaggle
 
 ```{python}
+import os
 import pandas as pd
+base_dir = os.path.dirname(os.path.abspath("__file__"))
+data_path = os.path.join(base_dir, "..", "data", "ufc_champs_final.csv")
+ufc = pd.read_csv(data_path)
 import matplotlib.pyplot as plt
 import seaborn as sns
-import plotly as px
-print("Hello World")
-ufc = pd.read_csv(r"data\ufc_champs_final.csv")
+import plotly.express as px
 print(ufc.head())
 ```
 
