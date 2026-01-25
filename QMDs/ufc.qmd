@@ -56,9 +56,13 @@ ufc_cleaned_data = ufc.drop(columns= ufc_subset_drop)
 ufc_cleaned_data = ufc_cleaned_data.drop(columns = ["total_fight_time_secs", "finish_round_time", "finish_round", "finish_details", "finish", "R_win_by_TKO_Doctor_Stoppage", "B_win_by_TKO_Doctor_Stoppage"])
 ```
 
-talk about variables that are going to be hard to quantify (pound for pound ranks maybe take out, what is constant_1, empty_arena, location, country, date, R_ev, B_ev, column000)
+talk about variables that are going to be hard to quantify (pound for pound ranks maybe take out, what is constant_1, empty_arena, location, country, date, R_ev, B_ev, column000) take out empty arena for sure
 
-Another step we can take to reduce the amount of variables for our model is to drop columns that cannot be quantified 
+Another step we can take to reduce the amount of variables for our model is to drop columns that cannot be quantified or add any sort of information for our model such as the date of the event, the row id, R_ev, and B_ev. I also misunderstood a column as I believed this dataset had a column for each fighter's ethnicity or place of birth which would be important since we have information on where the fight was held which might reveal if home-field advantage is important but turns out there is only information where the fight is held not on the individual fighter's place of birth or ethnicity and I do not think it is feasible to add every single fighters date of birth or ethnicity so I made the decision to drop these columns as they will only add noise.
+
+```{python}
+ufc_cleaned_data = ufc_cleaned_data.drop(columns = "R_ev", "B_ev", "date", "column000", "empty_arena", "constant_1", "country", "location")
+```
 
 Something worth contemplating is whether we only want to take into consideration championship bouts lets take a look at the distribution of championship vs nonchampionship bouts:
 ```{python}
