@@ -36,10 +36,10 @@ ufc_subset_drop = ufc_subset_drop.drop(columns = ["B_match_weightclass_rank", "R
 ufc_subset_keep = [f for f in ufc if f not in ufc_subset_drop]
 #With the code above we have a subset that has selected the 24 columns of interest
 
-ufc_subset = ufc.melt(id_vars = ufc_subset_keep,
-                   value_cars = ufc_subset_keep,
-                   var_name = "weight_class_rank",
-                   value_name = "rank")
+# ufc_subset = ufc.melt(id_vars = ufc_subset_keep,
+#                    value_cars = ufc_subset_keep,
+#                    var_name = "weight_class_rank",
+#                    value_name = "rank")
 ```
 
 The code above is an implementation of using the melt function for the purpose stated above. Instead we can just drop the 24 variables as shown in the following code chunk. Now we have 97 variables. 
@@ -56,13 +56,18 @@ ufc_cleaned_data = ufc.drop(columns= ufc_subset_drop)
 ufc_cleaned_data = ufc_cleaned_data.drop(columns = ["total_fight_time_secs", "finish_round_time", "finish_round", "finish_details", "finish", "R_win_by_TKO_Doctor_Stoppage", "B_win_by_TKO_Doctor_Stoppage"])
 ```
 
-talk about variables that are going to be hard to quantify (pound for pound ranks maybe take out, what is constant_1, empty_arena, location, country, date, R_ev, B_ev, column000) take out empty arena for sure
-
 Another step we can take to reduce the amount of variables for our model is to drop columns that cannot be quantified or add any sort of information for our model such as the date of the event, the row id, R_ev, and B_ev. I also misunderstood a column as I believed this dataset had a column for each fighter's ethnicity or place of birth which would be important since we have information on where the fight was held which might reveal if home-field advantage is important but turns out there is only information where the fight is held not on the individual fighter's place of birth or ethnicity and I do not think it is feasible to add every single fighters date of birth or ethnicity so I made the decision to drop these columns as they will only add noise.
 
 ```{python}
-ufc_cleaned_data = ufc_cleaned_data.drop(columns = ["R_ev", "B_ev", "date", "Unnamed: 0", "empty_arena", "constant_1", "country", "location"])
+ufc_cleaned_data = ufc_cleaned_data.drop(columns = ["R_ev", "B_ev", "date", "Unnamed: 0", "empty_arena", "country", "location"])
 ```
+
+There also seems to be redundant data (multicolinearity), for example we have information on the reach of both fighters, which is most likely important, but we also have a column dedicated to telling us the reach difference so it is easy to see the redundnacy
+
+
+
+
+
 
 Something worth contemplating is whether we only want to take into consideration championship bouts lets take a look at the distribution of championship vs nonchampionship bouts:
 ```{python}
