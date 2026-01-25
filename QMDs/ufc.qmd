@@ -30,22 +30,35 @@ print(na_counts)
 As we can see there are numerous variables that have considerable missing data especially these columns defining one of the fighters respective rank during the dates of the bouts which makes sense as each fighter that is not a champion at the time of the respective bout will only have 1 rank in 1 weight class (out of 12). Notice we have a weightclass column so can we collapse the ranks into 1 column that gives their rank and we already would know their weightclass from the weightclass column. Luckily I just noticed there is a column that already does this so we can drop 24 variables, but if there was no column that did this we would be able to use python's version of pivot longer with the melt function collapsing the columns into one after filtering them with some form of regular expression. 
 
 ```{python}
-#ufc_subset_drop = ufc.filter(regex="_rank")
-#ufc_subset_drop = ufc_subset_drop.drop(columns = ["B_match_weightclass_rank", "R_match_weightclass_rank", "B_Pound-for-Pound_rank", "better_rank", "R_Pound-for-Pound_rank"]) 
-#ufc_subset_keep = [f for f in ufc if f not in ufc_subset_drop]
-# With the code above we have a subset that has selected the 24 columns of interest
+#| eval: false
+ufc_subset_drop = ufc.filter(regex="_rank")
+ufc_subset_drop = ufc_subset_drop.drop(columns = ["B_match_weightclass_rank", "R_match_weightclass_rank", "B_Pound-for-Pound_rank", "better_rank", "R_Pound-for-Pound_rank"]) 
+ufc_subset_keep = [f for f in ufc if f not in ufc_subset_drop]
+#With the code above we have a subset that has selected the 24 columns of interest
 
-#ufc_subset = ufc.melt(id_vars = ufc_subset_keep,
-#                    value_cars = ufc_subset_keep,
-#                    var_name = "weight_class_rank",
-#                    value_name = "rank")
+ufc_subset = ufc.melt(id_vars = ufc_subset_keep,
+                   value_cars = ufc_subset_keep,
+                   var_name = "weight_class_rank",
+                   value_name = "rank")
 ```
 
-The code above is an implementation of using the melt function for the purpose stated above. Instead we can just drop the 24 variables as shown in the following code chunk.
+The code above is an implementation of using the melt function for the purpose stated above. Instead we can just drop the 24 variables as shown in the following code chunk. Now we have 97 variables. 
 
 ```{python}
+ufc_subset_drop = ufc.filter(regex="_rank")
+ufc_subset_drop = ufc_subset_drop.drop(columns = ["B_match_weightclass_rank", "R_match_weightclass_rank", "B_Pound-for-Pound_rank", "better_rank", "R_Pound-for-Pound_rank"]) 
+ufc_cleaned_data = ufc.drop(columns= ufc_subset_drop)
 
 ```
+
+97 variables is still a lot lets take a look to see if there are variables that will not be useful for out purposes, first lets take a look if there are variables that we will not be able to implement before the fight results. As we can see there are columns such as the round that the winner finished their opponent, the time of the finish, as well with the details of the finish.
+```{python}
+ufc_cleaned_data = ufc_cleaned_data.drop(columns = ["total_fight_time_secs", "finish_round_time", "finish_round", "finish_details", "finish", "R_win_by_TKO_Doctor_Stoppage", "B_win_by_TKO_Doctor_Stoppage"])
+```
+
+talk about variables that are going to be hard to quantify (pound for pound ranks maybe take out, what is constant_1, empty_arena, location, country, date, R_ev, B_ev, column000)
+
+Another step we can take to reduce the amount of variables for our model is to drop columns that cannot be quantified 
 
 Something worth contemplating is whether we only want to take into consideration championship bouts lets take a look at the distribution of championship vs nonchampionship bouts:
 ```{python}
