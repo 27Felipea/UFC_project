@@ -125,24 +125,15 @@ Now we can fit a simple model first so I would like to start with a logistic reg
 
 ufc_clean_log = ufc_clean_champ_only.copy() 
 ufc_clean_log['target'] = ufc_clean_log['Winner'].map({'Red': 1, 'Blue': 0})
-
 features_log = ufc_clean_log.select_dtypes(include=['number'])
-
 features_log = [col for col in features_log.columns 
                 if ufc_clean_log[col].isna().sum() == 0 and col != 'target']
-
 model_df = ufc_clean_log[features_log + ['target']].dropna()
-
 x = model_df[features_log]
 y = model_df['target']
-
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
 model_fit = LogisticRegression(max_iter=1000) 
 model_fit.fit(x_train, y_train)
-
 y_preds = model_fit.predict(x_test)
-print(f"Accuracy: {accuracy_score(y_test, y_preds):.2%}")
+print(accuracy_score(y_test, y_preds))
 ```
-
-
-
