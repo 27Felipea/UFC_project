@@ -107,7 +107,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <p>This dataset contains information on UFC fights that had a champion participating. This dataset is 4 years old so what I would like to do is create a model, perhaps a simple one, that will be used to predict championship title matches that have happened since and upcoming bouts. To challenge myself further I wil try to make <strong>USEFUL</strong> vizualizations and will be using python to throughout this project including using new packages such as matplotlib, seaborn and plotly (I have minimial experience with pandas).</p>
 <p>First lets load in these packages and our <a href="https://www.kaggle.com/datasets/akouaorsot/ufc-champions-fights/data">UFC dataset</a> from kaggle and take a look at some of the first rows of the dataset</p>
-<div id="40c8e001" class="cell" data-execution_count="1">
+<div id="5dd94a51" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>base_dir <span class="op">=</span> os.path.dirname(os.path.abspath(<span class="st">"__file__"</span>))</span>
@@ -116,7 +116,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly.express <span class="im">as</span> px</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ufc.head())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> accuracy_score, classification_report</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ufc.head())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   Unnamed: 0 weightclass           R_fighter     B_fighter  R_odds  B_odds  \
 0           0   Flyweight  Demetrious Johnson  Henry Cejudo  -470.0     375   
@@ -149,10 +152,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 [5 rows x 121 columns]</code></pre>
 </div>
 </div>
+<div id="2c53c66f" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> accuracy_score, classification_report</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <p>As we can see there are a 121 variables so we need to consider whether there are variables that are unnecessary for our purposes such as significant strikes as we are going to use our model to try and predict future title bouts and until the bout is over we do not know these quantites. First lets take a look at the counts of NAs in each variable in descending order, this is implemented in the following code chunk:</p>
-<div id="bc88ee7b" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>na_counts <span class="op">=</span> ufc.isna().<span class="bu">sum</span>().sort_values(ascending<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(na_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="05889109" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>na_counts <span class="op">=</span> ufc.isna().<span class="bu">sum</span>().sort_values(ascending<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(na_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>B_Women's Featherweight_rank    771
 B_Women's Flyweight_rank        762
@@ -168,34 +176,110 @@ better_rank                       0
 Length: 121, dtype: int64</code></pre>
 </div>
 </div>
-<p>As we can see there are numerous variables that have considerable missing data especially these columns defining one of the fighters respective rank during the dates of the bouts which makes sense as each fighter that is not a champion at the time of the respective bout will only have 1 rank in 1 weight class. Notice we have a weightclass column so can we collapse the ranks into 1 column that gives their rank and we already would know their weightclass from the weightclass column.</p>
-<div id="61cf660d" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># melt() to create a rank column as we know their weight class from the weight class column</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>As we can see there are numerous variables that have considerable missing data especially these columns defining one of the fighters respective rank during the dates of the bouts which makes sense as each fighter that is not a champion at the time of the respective bout will only have 1 rank in 1 weight class (out of 12). Notice we have a weightclass column so can we collapse the ranks into 1 column that gives their rank and we already would know their weightclass from the weightclass column. Luckily I just noticed there is a column that already does this so we can drop 24 variables, but if there was no column that did this we would be able to use python’s version of pivot longer with the melt function collapsing the columns into one after filtering them with some form of regular expression.</p>
+<div id="b212cddf" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc.<span class="bu">filter</span>(regex<span class="op">=</span><span class="st">"_rank"</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc_subset_drop.drop(columns <span class="op">=</span> [<span class="st">"B_match_weightclass_rank"</span>, <span class="st">"R_match_weightclass_rank"</span>, <span class="st">"B_Pound-for-Pound_rank"</span>, <span class="st">"better_rank"</span>, <span class="st">"R_Pound-for-Pound_rank"</span>]) </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>ufc_subset_keep <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> ufc <span class="cf">if</span> f <span class="kw">not</span> <span class="kw">in</span> ufc_subset_drop]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#With the code above we have a subset that has selected the 24 columns of interest</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co"># ufc_subset = ufc.melt(id_vars = ufc_subset_keep,</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">#                    value_cars = ufc_subset_keep,</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">#                    var_name = "weight_class_rank",</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">#                    value_name = "rank")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Something worth contemplating is whether we only want to take into consideration championship bouts lets take a look at the distribution of championship vs nonchampionship bouts:</p>
-<div id="ca5b9e93" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sns.set_theme(style <span class="op">=</span> <span class="st">"whitegrid"</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize <span class="op">=</span> (<span class="dv">8</span>, <span class="dv">5</span>))</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>sns.countplot(data <span class="op">=</span> ufc, x <span class="op">=</span> <span class="st">"title_bout"</span>, palette <span class="op">=</span> <span class="st">"viridis"</span>)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"non-title vs title fights"</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"distribution of non-title vs title fights"</span>)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"number of fights"</span>)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The code above is an implementation of using the melt function for the purpose stated above. Instead we can just drop the 24 variables as shown in the following code chunk. Now we have 97 variables.</p>
+<div id="51081660" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc.<span class="bu">filter</span>(regex<span class="op">=</span><span class="st">"_rank"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc_subset_drop.drop(columns <span class="op">=</span> [<span class="st">"B_match_weightclass_rank"</span>, <span class="st">"R_match_weightclass_rank"</span>, <span class="st">"B_Pound-for-Pound_rank"</span>, <span class="st">"better_rank"</span>, <span class="st">"R_Pound-for-Pound_rank"</span>]) </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc.drop(columns<span class="op">=</span> ufc_subset_drop)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>97 variables is still a lot lets take a look to see if there are variables that will not be useful for out purposes, first lets take a look if there are variables that we will not be able to implement before the fight results. As we can see there are columns such as the round that the winner finished their opponent, the time of the finish, as well with the details of the finish.</p>
+<div id="ef3066fa" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"total_fight_time_secs"</span>, <span class="st">"finish_round_time"</span>, <span class="st">"finish_round"</span>, <span class="st">"finish_details"</span>, <span class="st">"finish"</span>, <span class="st">"R_win_by_TKO_Doctor_Stoppage"</span>, <span class="st">"B_win_by_TKO_Doctor_Stoppage"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Another step we can take to reduce the amount of variables for our model is to drop columns that cannot be quantified or add any sort of information for our model such as the date of the event, the row id, R_ev, and B_ev. I also misunderstood a column as I believed this dataset had a column for each fighter’s ethnicity or place of birth which would be important since we have information on where the fight was held which might reveal if home-field advantage is important but turns out there is only information where the fight is held not on the individual fighter’s place of birth or ethnicity and I do not think it is feasible to add every single fighters date of birth or ethnicity so I made the decision to drop these columns as they will only add noise.</p>
+<div id="9f0d234e" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"R_ev"</span>, <span class="st">"B_ev"</span>, <span class="st">"date"</span>, <span class="st">"Unnamed: 0"</span>, <span class="st">"empty_arena"</span>, <span class="st">"country"</span>, <span class="st">"location"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>There also seems to be redundant data (multicolinearity), for example we have information on the reach of both fighters, which is most likely important, but we also have a column dedicated to telling us the reach difference so it is easy to see the redundnacy, another example is the individual weights of the fighters as they fight at the same weight class so we know they are already at the same weight. I also find it important to notice that there might be data that seems redundant but there might be good reasons to keep the variable and in this dataset it corresponds to the individual ages of the fighters and the weight difference because for example the columns that has the weight difference treats all 5 year age differences the same which is not the case in athletic sports for instance there is a big difference between a 27 year old fighting a 32 year old (both in their physical primes) and a 32 year old fighting a 37 year old (one in his prime the other years outside their prime). In the following code cell I display all variables that contain “_dif” and from there I will make the decision whether to drop the “dif” column or the corresponding columns it is related to.</p>
+<div id="c343b510" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ufc_diff_subset <span class="op">=</span> ufc.<span class="bu">filter</span>(regex <span class="op">=</span> <span class="st">'_dif'</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ufc_diff_subset.head())</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.assign(sig_str_pct_diff <span class="op">=</span> ufc_cleaned_data[<span class="st">"R_avg_SIG_STR_pct"</span>] <span class="op">-</span> ufc_cleaned_data[<span class="st">"B_avg_SIG_STR_pct"</span>])</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.assign(td_pct_diff <span class="op">=</span> ufc_cleaned_data[<span class="st">"R_avg_TD_pct"</span>] <span class="op">-</span> ufc_cleaned_data[<span class="st">"B_avg_TD_pct"</span>])</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"B_current_lose_streak"</span>, <span class="st">"R_current_lose_streak"</span>, <span class="st">"B_current_win_streak"</span>, <span class="st">"R_current_win_streak"</span>, <span class="st">"B_draw"</span>, <span class="st">"R_draw"</span>, <span class="st">"B_avg_SIG_STR_landed"</span>, <span class="st">"R_avg_SIG_STR_landed"</span>, <span class="st">"B_avg_SIG_STR_pct"</span>, <span class="st">"R_avg_SIG_STR_pct"</span>, <span class="st">"B_avg_SUB_ATT"</span>, <span class="st">"R_avg_SUB_ATT"</span>, <span class="st">"B_avg_TD_landed"</span>, <span class="st">"R_avg_TD_landed"</span>, <span class="st">"B_longest_win_streak"</span>, <span class="st">"R_longest_win_streak"</span>, <span class="st">"B_losses"</span>, <span class="st">"R_losses"</span>, <span class="st">"B_total_rounds_fought"</span>, <span class="st">"R_total_rounds_fought"</span>, <span class="st">"B_total_title_bouts"</span>, <span class="st">"R_total_title_bouts"</span>, <span class="st">"B_win_by_Decision_Majority"</span>, <span class="st">"R_win_by_Decision_Majority"</span>, <span class="st">"B_Height_cms"</span>, <span class="st">"R_Height_cms"</span>, <span class="st">"B_Reach_cms"</span>, <span class="st">"R_Reach_cms"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   lose_streak_dif  win_streak_dif  longest_win_streak_dif  win_dif  loss_dif  \
+0                0             -11                      -9       -9         0   
+1                0             -10                      -9       -9         0   
+2                0              -8                      -8       -7         0   
+3               -3             -10                      -8      -10        -2   
+4                0              -5                      -5       -7         2   
+
+   total_round_dif  total_title_bout_dif  ko_dif  sub_dif  height_dif  \
+0              -43                   -12      -1       -5        2.54   
+1              -40                   -12      -2       -2        2.54   
+2              -36                   -11      -2       -1        2.54   
+3              -35                   -10      -2       -3       10.16   
+4              -38                    -9      -1       -3        2.54   
+
+   reach_dif  age_dif  sig_str_dif  avg_sub_att_dif  avg_td_dif  
+0      -5.08        0   -17.860294        -0.580882   -2.294118  
+1      -7.62        7   -44.821429         0.946429   -1.348214  
+2      -2.54       -2   -35.708333         0.025000    0.108333  
+3       0.00        1    -7.380952         0.738095   -1.047619  
+4      -5.08        0   -10.250000        -0.211538   -2.288462  </code></pre>
+</div>
+</div>
+<p>As we can see we are now at 57 variables and I was struggling what to do with all of these betting odds and after doing some research I believe that it would be more beneficial for me to take them out as I would like to base the model off of physicial attributes and past performence, and if I keep these betting odds this model can just become a reflection of those odds so in this next code cell I will remove them.</p>
+<div id="699342c9" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>ufc_clean_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"R_odds"</span>, <span class="st">"B_odds"</span>, <span class="st">"r_dec_odds"</span>, <span class="st">"b_dec_odds"</span>, <span class="st">"r_sub_odds"</span>, <span class="st">"b_sub_odds"</span>, <span class="st">"r_ko_odds"</span>, <span class="st">"b_ko_odds"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we are down to 49 columns and looking at a list of the columns I believe that there are no variables that need to be dropped. Something we now need to do is to decide whether or not to drop non-championship bouts so what I am going to do is create a copy of the dataset one that has only the championship fights and the other the total dataset up to this point. But first lets create a vizualization that shows us championship vs non-championship bouts.</p>
+<div id="419c1a5a" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>sns.set_theme(style <span class="op">=</span> <span class="st">"whitegrid"</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize <span class="op">=</span> (<span class="dv">8</span>, <span class="dv">5</span>))</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.countplot(data <span class="op">=</span> ufc, x <span class="op">=</span> <span class="st">"title_bout"</span>, palette <span class="op">=</span> <span class="st">"viridis"</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>ax.set_xticklabels([<span class="st">'Non-Championship'</span>, <span class="st">'Championship'</span>])</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"non-title vs title fights"</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"distribution of non-title vs title fights"</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"number of fights"</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>C:\Users\felip\AppData\Local\Temp\ipykernel_20476\3314666345.py:3: FutureWarning:
+<pre><code>C:\Users\felip\AppData\Local\Temp\ipykernel_10020\1352250165.py:3: FutureWarning:
 
 
 
 Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
 
+
+C:\Users\felip\AppData\Local\Temp\ipykernel_10020\1352250165.py:4: UserWarning:
+
+set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="ufc_files/figure-html/cell-5-output-2.png" class="img-fluid figure-img"></p>
+<p><img src="ufc_files/figure-html/cell-11-output-2.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
+</div>
+</div>
+<p>As we can see the majority of the data is Non-Championship data so for that reason I want to create two datasets as stated prior one that has all observations and the other only championship bouts.</p>
+<div id="40a9d575" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>ufc_clean_total <span class="op">=</span> ufc_clean_data</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>ufc_clean_champ_only <span class="op">=</span> ufc_clean_data[ufc_clean_data[<span class="st">"title_bout"</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we can fit a simple model first so I would like to start with a logistic regression model in which we first have to transform our variable that we are trying to predict (Winner) into 0s and 1s</p>
+<div id="b365d31c" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>ufc[<span class="st">'target'</span>] <span class="op">=</span> ufc[<span class="st">'Winner'</span>].<span class="bu">map</span>({<span class="st">'Red'</span>: <span class="dv">0</span>, <span class="st">'Blue'</span>: <span class="dv">1</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>C:\Users\felip\AppData\Local\Temp\ipykernel_10020\3816664061.py:1: PerformanceWarning:
+
+DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+</code></pre>
 </div>
 </div>
 

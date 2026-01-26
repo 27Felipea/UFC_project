@@ -17,9 +17,17 @@ ufc = pd.read_csv(data_path)
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
 print(ufc.head())
 ```
 
+```{python}
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
+```
 As we can see there are a 121 variables so we need to consider whether there are variables that are unnecessary for our purposes such as significant strikes as we are going to use our model to try and predict future title bouts and until the bout is over we do not know these quantites. First lets take a look at the counts of NAs in each variable in descending order, this is implemented in the following code chunk:
 
 ```{python}
@@ -36,10 +44,10 @@ ufc_subset_drop = ufc_subset_drop.drop(columns = ["B_match_weightclass_rank", "R
 ufc_subset_keep = [f for f in ufc if f not in ufc_subset_drop]
 #With the code above we have a subset that has selected the 24 columns of interest
 
-# ufc_subset = ufc.melt(id_vars = ufc_subset_keep,
-#                    value_cars = ufc_subset_keep,
-#                    var_name = "weight_class_rank",
-#                    value_name = "rank")
+ ufc_subset = ufc.melt(id_vars = ufc_subset_keep,
+                    value_cars = ufc_subset_keep,
+                    var_name = "weight_class_rank",
+                    value_name = "rank")
 ```
 
 The code above is an implementation of using the melt function for the purpose stated above. Instead we can just drop the 24 variables as shown in the following code chunk. Now we have 97 variables. 
@@ -72,20 +80,35 @@ ufc_cleaned_data = ufc_cleaned_data.assign(td_pct_diff = ufc_cleaned_data["R_avg
 ufc_cleaned_data = ufc_cleaned_data.drop(columns = ["B_current_lose_streak", "R_current_lose_streak", "B_current_win_streak", "R_current_win_streak", "B_draw", "R_draw", "B_avg_SIG_STR_landed", "R_avg_SIG_STR_landed", "B_avg_SIG_STR_pct", "R_avg_SIG_STR_pct", "B_avg_SUB_ATT", "R_avg_SUB_ATT", "B_avg_TD_landed", "R_avg_TD_landed", "B_longest_win_streak", "R_longest_win_streak", "B_losses", "R_losses", "B_total_rounds_fought", "R_total_rounds_fought", "B_total_title_bouts", "R_total_title_bouts", "B_win_by_Decision_Majority", "R_win_by_Decision_Majority", "B_Height_cms", "R_Height_cms", "B_Reach_cms", "R_Reach_cms"])
 ```
 
-As we can see we are now at 57 variables
+As we can see we are now at 57 variables and I was struggling what to do with all of these betting odds and after doing some research I believe that it would be more beneficial for me to take them out as I would like to base the model off of physicial attributes and past performence, and if I keep these betting odds this model can just become a reflection of those odds so in this next code cell I will remove them.
 
+```{python}
+ufc_clean_data = ufc_cleaned_data.drop(columns = ["R_odds", "B_odds", "r_dec_odds", "b_dec_odds", "r_sub_odds", "b_sub_odds", "r_ko_odds", "b_ko_odds"])
+```
 
-
-
-Something worth contemplating is whether we only want to take into consideration championship bouts lets take a look at the distribution of championship vs nonchampionship bouts:
+Now we are down to 49 columns and looking at a list of the columns I believe that there are no variables that need to be dropped. Something we now need to do is to decide whether or not to drop non-championship bouts so what I am going to do is create a copy of the dataset one that has only the championship fights and the other the total dataset up to this point. But first lets create a vizualization that shows us championship vs non-championship bouts.
 ```{python}
 sns.set_theme(style = "whitegrid")
 plt.figure(figsize = (8, 5))
-sns.countplot(data = ufc, x = "title_bout", palette = "viridis")
+ax = sns.countplot(data = ufc, x = "title_bout", palette = "viridis")
+ax.set_xticklabels(['Non-Championship', 'Championship'])
 plt.title("non-title vs title fights")
 plt.xlabel("distribution of non-title vs title fights")
 plt.ylabel("number of fights")
 plt.show()
+```
+
+As we can see the majority of the data is Non-Championship data so for that reason I want to create two datasets as stated prior one that has all observations and the other only championship bouts.
+
+```{python}
+ufc_clean_total = ufc_clean_data
+ufc_clean_champ_only = ufc_clean_data[ufc_clean_data["title_bout"]]
+```
+
+Now we can fit a simple model first so I would like to start with a logistic regression model in which we first have to transform our variable that we are trying to predict (Winner) into 0s and 1s
+
+```{python}
+ufc['target'] = ufc['Winner'].map({'Red': 0, 'Blue': 1})
 ```
 
 
