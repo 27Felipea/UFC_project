@@ -107,7 +107,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <p>This dataset contains information on UFC fights that had a champion participating. This dataset is 4 years old so what I would like to do is create a model, perhaps a simple one, that will be used to predict championship title matches that have happened since and upcoming bouts. To challenge myself further I wil try to make <strong>USEFUL</strong> vizualizations and will be using python to throughout this project including using new packages such as matplotlib, seaborn and plotly (I have minimial experience with pandas).</p>
 <p>First lets load in these packages and our <a href="https://www.kaggle.com/datasets/akouaorsot/ufc-champions-fights/data">UFC dataset</a> from kaggle and take a look at some of the first rows of the dataset</p>
-<div id="5dd94a51" class="cell" data-execution_count="1">
+<div id="5134441d" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>base_dir <span class="op">=</span> os.path.dirname(os.path.abspath(<span class="st">"__file__"</span>))</span>
@@ -152,13 +152,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 [5 rows x 121 columns]</code></pre>
 </div>
 </div>
-<div id="2c53c66f" class="cell" data-execution_count="2">
+<div id="f48334a9" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> accuracy_score, classification_report</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>As we can see there are a 121 variables so we need to consider whether there are variables that are unnecessary for our purposes such as significant strikes as we are going to use our model to try and predict future title bouts and until the bout is over we do not know these quantites. First lets take a look at the counts of NAs in each variable in descending order, this is implemented in the following code chunk:</p>
-<div id="05889109" class="cell" data-execution_count="3">
+<div id="0d5d85cc" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>na_counts <span class="op">=</span> ufc.isna().<span class="bu">sum</span>().sort_values(ascending<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(na_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -177,33 +177,33 @@ Length: 121, dtype: int64</code></pre>
 </div>
 </div>
 <p>As we can see there are numerous variables that have considerable missing data especially these columns defining one of the fighters respective rank during the dates of the bouts which makes sense as each fighter that is not a champion at the time of the respective bout will only have 1 rank in 1 weight class (out of 12). Notice we have a weightclass column so can we collapse the ranks into 1 column that gives their rank and we already would know their weightclass from the weightclass column. Luckily I just noticed there is a column that already does this so we can drop 24 variables, but if there was no column that did this we would be able to use python’s version of pivot longer with the melt function collapsing the columns into one after filtering them with some form of regular expression.</p>
-<div id="b212cddf" class="cell" data-execution_count="4">
+<div id="84a5b589" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc.<span class="bu">filter</span>(regex<span class="op">=</span><span class="st">"_rank"</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc_subset_drop.drop(columns <span class="op">=</span> [<span class="st">"B_match_weightclass_rank"</span>, <span class="st">"R_match_weightclass_rank"</span>, <span class="st">"B_Pound-for-Pound_rank"</span>, <span class="st">"better_rank"</span>, <span class="st">"R_Pound-for-Pound_rank"</span>]) </span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>ufc_subset_keep <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> ufc <span class="cf">if</span> f <span class="kw">not</span> <span class="kw">in</span> ufc_subset_drop]</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#With the code above we have a subset that has selected the 24 columns of interest</span></span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co"># ufc_subset = ufc.melt(id_vars = ufc_subset_keep,</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">#                    value_cars = ufc_subset_keep,</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">#                    var_name = "weight_class_rank",</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">#                    value_name = "rank")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a> ufc_subset <span class="op">=</span> ufc.melt(id_vars <span class="op">=</span> ufc_subset_keep,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                    value_cars <span class="op">=</span> ufc_subset_keep,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                    var_name <span class="op">=</span> <span class="st">"weight_class_rank"</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                    value_name <span class="op">=</span> <span class="st">"rank"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The code above is an implementation of using the melt function for the purpose stated above. Instead we can just drop the 24 variables as shown in the following code chunk. Now we have 97 variables.</p>
-<div id="51081660" class="cell" data-execution_count="5">
+<div id="3604c8cc" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc.<span class="bu">filter</span>(regex<span class="op">=</span><span class="st">"_rank"</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc_subset_drop.drop(columns <span class="op">=</span> [<span class="st">"B_match_weightclass_rank"</span>, <span class="st">"R_match_weightclass_rank"</span>, <span class="st">"B_Pound-for-Pound_rank"</span>, <span class="st">"better_rank"</span>, <span class="st">"R_Pound-for-Pound_rank"</span>]) </span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc.drop(columns<span class="op">=</span> ufc_subset_drop)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>97 variables is still a lot lets take a look to see if there are variables that will not be useful for out purposes, first lets take a look if there are variables that we will not be able to implement before the fight results. As we can see there are columns such as the round that the winner finished their opponent, the time of the finish, as well with the details of the finish.</p>
-<div id="ef3066fa" class="cell" data-execution_count="6">
+<div id="645e1c23" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"total_fight_time_secs"</span>, <span class="st">"finish_round_time"</span>, <span class="st">"finish_round"</span>, <span class="st">"finish_details"</span>, <span class="st">"finish"</span>, <span class="st">"R_win_by_TKO_Doctor_Stoppage"</span>, <span class="st">"B_win_by_TKO_Doctor_Stoppage"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Another step we can take to reduce the amount of variables for our model is to drop columns that cannot be quantified or add any sort of information for our model such as the date of the event, the row id, R_ev, and B_ev. I also misunderstood a column as I believed this dataset had a column for each fighter’s ethnicity or place of birth which would be important since we have information on where the fight was held which might reveal if home-field advantage is important but turns out there is only information where the fight is held not on the individual fighter’s place of birth or ethnicity and I do not think it is feasible to add every single fighters date of birth or ethnicity so I made the decision to drop these columns as they will only add noise.</p>
-<div id="9f0d234e" class="cell" data-execution_count="7">
+<div id="79ef129a" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"R_ev"</span>, <span class="st">"B_ev"</span>, <span class="st">"date"</span>, <span class="st">"Unnamed: 0"</span>, <span class="st">"empty_arena"</span>, <span class="st">"country"</span>, <span class="st">"location"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>There also seems to be redundant data (multicolinearity), for example we have information on the reach of both fighters, which is most likely important, but we also have a column dedicated to telling us the reach difference so it is easy to see the redundnacy, another example is the individual weights of the fighters as they fight at the same weight class so we know they are already at the same weight. I also find it important to notice that there might be data that seems redundant but there might be good reasons to keep the variable and in this dataset it corresponds to the individual ages of the fighters and the weight difference because for example the columns that has the weight difference treats all 5 year age differences the same which is not the case in athletic sports for instance there is a big difference between a 27 year old fighting a 32 year old (both in their physical primes) and a 32 year old fighting a 37 year old (one in his prime the other years outside their prime). In the following code cell I display all variables that contain “_dif” and from there I will make the decision whether to drop the “dif” column or the corresponding columns it is related to.</p>
-<div id="c343b510" class="cell" data-execution_count="8">
+<div id="34684355" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ufc_diff_subset <span class="op">=</span> ufc.<span class="bu">filter</span>(regex <span class="op">=</span> <span class="st">'_dif'</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ufc_diff_subset.head())</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.assign(sig_str_pct_diff <span class="op">=</span> ufc_cleaned_data[<span class="st">"R_avg_SIG_STR_pct"</span>] <span class="op">-</span> ufc_cleaned_data[<span class="st">"B_avg_SIG_STR_pct"</span>])</span>
@@ -233,11 +233,11 @@ Length: 121, dtype: int64</code></pre>
 </div>
 </div>
 <p>As we can see we are now at 57 variables and I was struggling what to do with all of these betting odds and after doing some research I believe that it would be more beneficial for me to take them out as I would like to base the model off of physicial attributes and past performence, and if I keep these betting odds this model can just become a reflection of those odds so in this next code cell I will remove them.</p>
-<div id="699342c9" class="cell" data-execution_count="9">
+<div id="a4fcad46" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>ufc_clean_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"R_odds"</span>, <span class="st">"B_odds"</span>, <span class="st">"r_dec_odds"</span>, <span class="st">"b_dec_odds"</span>, <span class="st">"r_sub_odds"</span>, <span class="st">"b_sub_odds"</span>, <span class="st">"r_ko_odds"</span>, <span class="st">"b_ko_odds"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now we are down to 49 columns and looking at a list of the columns I believe that there are no variables that need to be dropped. Something we now need to do is to decide whether or not to drop non-championship bouts so what I am going to do is create a copy of the dataset one that has only the championship fights and the other the total dataset up to this point. But first lets create a vizualization that shows us championship vs non-championship bouts.</p>
-<div id="419c1a5a" class="cell" data-execution_count="10">
+<div id="93296eaf" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>sns.set_theme(style <span class="op">=</span> <span class="st">"whitegrid"</span>)</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize <span class="op">=</span> (<span class="dv">8</span>, <span class="dv">5</span>))</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.countplot(data <span class="op">=</span> ufc, x <span class="op">=</span> <span class="st">"title_bout"</span>, palette <span class="op">=</span> <span class="st">"viridis"</span>)</span>
@@ -247,14 +247,14 @@ Length: 121, dtype: int64</code></pre>
 <span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"number of fights"</span>)</span>
 <span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>C:\Users\felip\AppData\Local\Temp\ipykernel_10020\1352250165.py:3: FutureWarning:
+<pre><code>C:\Users\felip\AppData\Local\Temp\ipykernel_31712\1352250165.py:3: FutureWarning:
 
 
 
 Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
 
 
-C:\Users\felip\AppData\Local\Temp\ipykernel_10020\1352250165.py:4: UserWarning:
+C:\Users\felip\AppData\Local\Temp\ipykernel_31712\1352250165.py:4: UserWarning:
 
 set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
 </code></pre>
@@ -268,17 +268,60 @@ set_ticklabels() should only be used with a fixed number of ticks, i.e. after se
 </div>
 </div>
 <p>As we can see the majority of the data is Non-Championship data so for that reason I want to create two datasets as stated prior one that has all observations and the other only championship bouts.</p>
-<div id="40a9d575" class="cell" data-execution_count="11">
+<div id="e504e629" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>ufc_clean_total <span class="op">=</span> ufc_clean_data</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>ufc_clean_champ_only <span class="op">=</span> ufc_clean_data[ufc_clean_data[<span class="st">"title_bout"</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Now we can fit a simple model first so I would like to start with a logistic regression model in which we first have to transform our variable that we are trying to predict (Winner) into 0s and 1s</p>
-<div id="b365d31c" class="cell" data-execution_count="12">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>ufc[<span class="st">'target'</span>] <span class="op">=</span> ufc[<span class="st">'Winner'</span>].<span class="bu">map</span>({<span class="st">'Red'</span>: <span class="dv">0</span>, <span class="st">'Blue'</span>: <span class="dv">1</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Now we can fit a simple model first so I would like to start with a logistic regression model in which we first have to transform our variable that we are trying to predict (Winner) into 1s and 0s from “Red” and “Blue” respectfully. Since we are using a logistic regression model we can only use numeric predictors and cannot have and NaNs in the data set so we need to prep our data.</p>
+<div id="d749a54e" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ufc_clean_log = ufc_clean_champ_only.copy()</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ufc_clean_log['target'] = ufc_clean_champ_only['Winner'].map({'Red': 1, 'Blue': 0})</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co"># # the next line of code tells us the counts of NaNs in each column</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co"># print(ufc_clean_log.isna().sum())</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co"># features_log = ufc_clean_champ_only.select_dtypes(include=['number'])</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="co"># features_log = features_log.columns[features_log.isna().sum() == 0].tolist()</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co"># model = ufc_clean_log[features_log + ['target']].dropna()</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co"># x = model[features_log]</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="co"># y = model['target']</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co"># x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co"># model_fit = LogisticRegression()</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="co"># model_fit.fit(x_train, y_train)</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="co"># y_preds = model_fit.predict(x_test)</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="co"># print(accuracy_score(y_test, y_preds))</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>ufc_clean_log <span class="op">=</span> ufc_clean_champ_only.copy() </span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>ufc_clean_log[<span class="st">'target'</span>] <span class="op">=</span> ufc_clean_log[<span class="st">'Winner'</span>].<span class="bu">map</span>({<span class="st">'Red'</span>: <span class="dv">1</span>, <span class="st">'Blue'</span>: <span class="dv">0</span>})</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>features_log <span class="op">=</span> ufc_clean_log.select_dtypes(include<span class="op">=</span>[<span class="st">'number'</span>])</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>features_log <span class="op">=</span> [col <span class="cf">for</span> col <span class="kw">in</span> features_log.columns </span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> ufc_clean_log[col].isna().<span class="bu">sum</span>() <span class="op">==</span> <span class="dv">0</span> <span class="kw">and</span> col <span class="op">!=</span> <span class="st">'target'</span>]</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>model_df <span class="op">=</span> ufc_clean_log[features_log <span class="op">+</span> [<span class="st">'target'</span>]].dropna()</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> model_df[features_log]</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> model_df[<span class="st">'target'</span>]</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>x_train, x_test, y_train, y_test <span class="op">=</span> train_test_split(x, y, test_size<span class="op">=</span><span class="fl">0.2</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>model_fit <span class="op">=</span> LogisticRegression(max_iter<span class="op">=</span><span class="dv">1000</span>) </span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>model_fit.fit(x_train, y_train)</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>y_preds <span class="op">=</span> model_fit.predict(x_test)</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Accuracy: </span><span class="sc">{</span>accuracy_score(y_test, y_preds)<span class="sc">:.2%}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Accuracy: 70.69%</code></pre>
+</div>
 <div class="cell-output cell-output-stderr">
-<pre><code>C:\Users\felip\AppData\Local\Temp\ipykernel_10020\3816664061.py:1: PerformanceWarning:
+<pre><code>C:\Users\felip\AppData\Local\Programs\Python\Python312\Lib\site-packages\sklearn\linear_model\_logistic.py:406: ConvergenceWarning:
 
-DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+lbfgs failed to converge after 1000 iteration(s) (status=1):
+STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT
+
+Increase the number of iterations to improve the convergence (max_iter=1000).
+You might also want to scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
 </code></pre>
 </div>
 </div>

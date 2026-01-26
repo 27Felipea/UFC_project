@@ -105,10 +105,43 @@ ufc_clean_total = ufc_clean_data
 ufc_clean_champ_only = ufc_clean_data[ufc_clean_data["title_bout"]]
 ```
 
-Now we can fit a simple model first so I would like to start with a logistic regression model in which we first have to transform our variable that we are trying to predict (Winner) into 0s and 1s
+Now we can fit a simple model first so I would like to start with a logistic regression model in which we first have to transform our variable that we are trying to predict (Winner) into 1s and 0s from "Red" and "Blue" respectfully. Since we are using a logistic regression model we can only use numeric predictors and cannot have and NaNs in the data set so we need to prep our data.
 
 ```{python}
-ufc['target'] = ufc['Winner'].map({'Red': 0, 'Blue': 1})
+# ufc_clean_log = ufc_clean_champ_only.copy()
+# ufc_clean_log['target'] = ufc_clean_champ_only['Winner'].map({'Red': 1, 'Blue': 0})
+# # the next line of code tells us the counts of NaNs in each column
+# print(ufc_clean_log.isna().sum())
+# features_log = ufc_clean_champ_only.select_dtypes(include=['number'])
+# features_log = features_log.columns[features_log.isna().sum() == 0].tolist()
+# model = ufc_clean_log[features_log + ['target']].dropna()
+# x = model[features_log]
+# y = model['target']
+# x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+# model_fit = LogisticRegression()
+# model_fit.fit(x_train, y_train)
+# y_preds = model_fit.predict(x_test)
+# print(accuracy_score(y_test, y_preds))
+
+ufc_clean_log = ufc_clean_champ_only.copy() 
+ufc_clean_log['target'] = ufc_clean_log['Winner'].map({'Red': 1, 'Blue': 0})
+
+features_log = ufc_clean_log.select_dtypes(include=['number'])
+
+features_log = [col for col in features_log.columns 
+                if ufc_clean_log[col].isna().sum() == 0 and col != 'target']
+
+model_df = ufc_clean_log[features_log + ['target']].dropna()
+
+x = model_df[features_log]
+y = model_df['target']
+
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+model_fit = LogisticRegression(max_iter=1000) 
+model_fit.fit(x_train, y_train)
+
+y_preds = model_fit.predict(x_test)
+print(f"Accuracy: {accuracy_score(y_test, y_preds):.2%}")
 ```
 
 
