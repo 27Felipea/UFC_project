@@ -23,11 +23,6 @@ from sklearn.metrics import accuracy_score, classification_report
 print(ufc.head())
 ```
 
-```{python}
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report
-```
 As we can see there are a 121 variables so we need to consider whether there are variables that are unnecessary for our purposes such as significant strikes as we are going to use our model to try and predict future title bouts and until the bout is over we do not know these quantites. First lets take a look at the counts of NAs in each variable in descending order, this is implemented in the following code chunk:
 
 ```{python}
@@ -50,7 +45,7 @@ ufc_subset_keep = [f for f in ufc if f not in ufc_subset_drop]
                     value_name = "rank")
 ```
 
-The code above is an implementation of using the melt function for the purpose stated above. Instead we can just drop the 24 variables as shown in the following code chunk. Now we have 97 variables. 
+The code above is an implementation of using the melt function for the purpose stated above if we had to, instead we can just drop the 24 variables as shown in the following code chunk. Now we have 97 variables. 
 
 ```{python}
 ufc_subset_drop = ufc.filter(regex="_rank")
@@ -96,14 +91,47 @@ plt.title("non-title vs title fights")
 plt.xlabel("distribution of non-title vs title fights")
 plt.ylabel("number of fights")
 plt.show()
+
 ```
 
-As we can see the majority of the data is Non-Championship data so for that reason I want to create two datasets as stated prior one that has all observations and the other only championship bouts.
+As we can see the majority of the data is Non-Championship data so for that reason I want to create two datasets as stated prior one that has all observations and the other only championship bouts. Lets take a look at the distribution of wins regarding only championship bouts.
 
 ```{python}
 ufc_clean_total = ufc_clean_data
 ufc_clean_champ_only = ufc_clean_data[ufc_clean_data["title_bout"]]
+sns.set_theme(style="whitegrid")
+plt.figure(figsize=(8, 6))
+sns.countplot(
+    data=ufc_clean_champ_only, 
+    x='Winner', 
+    palette={'Red': 'crimson', 'Blue': 'royalblue'},
+    order=['Red', 'Blue']
+)
+plt.title('Win Distribution in UFC Championship Bouts', fontsize=15)
+plt.xlabel('Corner Color')
+plt.ylabel('Number of Wins')
+plt.show()
 ```
+
+Now lets take a look at the prior distribution regarding the whole data set
+```{python}
+sns.set_theme(style="whitegrid")
+plt.figure(figsize=(8, 6))
+sns.countplot(
+    data=ufc_clean_total, 
+    x='Winner', 
+    palette={'Red': 'crimson', 'Blue': 'royalblue'},
+    order=['Red', 'Blue']
+)
+plt.title('Win Distribution in UFC Bouts', fontsize=15)
+plt.xlabel('Corner Color')
+plt.ylabel('Number of Wins')
+plt.show()
+```
+
+As we can see in both circumstances the Red corner is more likely to win and has a slightly higher chance to win in a championship bout over a non-championship bout.
+
+
 
 Now we can fit a simple model first so I would like to start with a logistic regression model in which we first have to transform our variable that we are trying to predict (Winner) into 1s and 0s from "Red" and "Blue" respectfully. Since we are using a logistic regression model we can only use numeric predictors and cannot have and NaNs in the data set so we need to prep our data.
 
@@ -125,7 +153,7 @@ y = model_df['target']
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
 model_fit = LogisticRegression(max_iter=1000) 
 model_fit.fit(x_train, y_train)
-#here we test the model on the test set (unseen data)
+#here we test the model on the test set (unseen data) hopefully we get a good result
 y_preds = model_fit.predict(x_test)
 print(accuracy_score(y_test, y_preds))
 ```
@@ -133,8 +161,6 @@ print(accuracy_score(y_test, y_preds))
 Lets see how our model performs on some championship bouts that have happened since the last update of this dataset. We have to make a new observation for the bout in question and use our model to predict the outcome. Since it would be very tedious to get every stat needed for a new observation I decided to use AI to retrieve them. This new observation is a fight that happened Jan 24 in which Gaethje won.
 
 ```{python}
-import pandas as pd
-
 # Creating the stats for Gaethje (Red) vs Pimblett (Blue)
 new_fight_stats = {
     'no_of_rounds': [5],
@@ -189,8 +215,6 @@ print(f"Model Confidence: {confidence:.2%}")
 Our model was right!!! lets try another and I am feeling like our model is performing a little too good lets look at a fight considered the greatest upset in UFC history Adesanya vs. Strickland (Adesanya was a heavy favorite)
 
 ```{python}
-import pandas as pd
-
 # Stats for Sean Strickland (Red) vs Israel Adesanya (Blue) - UFC 293
 strickland_vs_izzy = {
     'no_of_rounds': [5],
@@ -239,8 +263,6 @@ As we can see our model predicted that there was over a 99% chance that Adesanya
 Lets check a toss up fight Strickland vs Du Plessis(odds around -115 and -105)
 
 ```{python}
-import pandas as pd
-
 # Stats for Sean Strickland (Red) vs Dricus Du Plessis (Blue) - UFC 297
 strickland_vs_dricus = {
     'no_of_rounds': [5],
@@ -288,8 +310,6 @@ print(f"Confidence: {max(prob[0]):.2%}")
 This was a controversial win but the model predicted it right, to wrap this up lets check the prediction for this weekend's championship bout Volkanovski vs Lopes
 
 ```{python}
-import pandas as pd
-
 # Stats for Alexander Volkanovski (Red) vs Diego Lopes (Blue) - UFC 325
 volk_vs_lopes_rematch = {
     'no_of_rounds': [5],

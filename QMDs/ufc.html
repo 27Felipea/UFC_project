@@ -107,7 +107,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <p>This dataset contains information on UFC fights that had a champion participating. This dataset is 4 years old so what I would like to do is create a model, perhaps a simple one, that will be used to predict championship title matches that have happened since and upcoming bouts. To challenge myself further I wil try to make <strong>USEFUL</strong> vizualizations and will be using python to throughout this project including using new packages such as matplotlib, seaborn and plotly (I have minimial experience with pandas).</p>
 <p>First lets load in these packages and our <a href="https://www.kaggle.com/datasets/akouaorsot/ufc-champions-fights/data">UFC dataset</a> from kaggle and take a look at some of the first rows of the dataset</p>
-<div id="4befda50" class="cell" data-execution_count="1">
+<div id="6bf306d5" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>base_dir <span class="op">=</span> os.path.dirname(os.path.abspath(<span class="st">"__file__"</span>))</span>
@@ -152,15 +152,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 [5 rows x 121 columns]</code></pre>
 </div>
 </div>
-<div id="dbb12a86" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> accuracy_score, classification_report</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
 <p>As we can see there are a 121 variables so we need to consider whether there are variables that are unnecessary for our purposes such as significant strikes as we are going to use our model to try and predict future title bouts and until the bout is over we do not know these quantites. First lets take a look at the counts of NAs in each variable in descending order, this is implemented in the following code chunk:</p>
-<div id="5ab0495c" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>na_counts <span class="op">=</span> ufc.isna().<span class="bu">sum</span>().sort_values(ascending<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(na_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="bda10277" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>na_counts <span class="op">=</span> ufc.isna().<span class="bu">sum</span>().sort_values(ascending<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(na_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>B_Women's Featherweight_rank    771
 B_Women's Flyweight_rank        762
@@ -177,38 +172,38 @@ Length: 121, dtype: int64</code></pre>
 </div>
 </div>
 <p>As we can see there are numerous variables that have considerable missing data especially these columns defining one of the fighters respective rank during the dates of the bouts which makes sense as each fighter that is not a champion at the time of the respective bout will only have 1 rank in 1 weight class (out of 12). Notice we have a weightclass column so can we collapse the ranks into 1 column that gives their rank and we already would know their weightclass from the weightclass column. Luckily I just noticed there is a column that already does this so we can drop 24 variables, but if there was no column that did this we would be able to use python’s version of pivot longer with the melt function collapsing the columns into one after filtering them with some form of regular expression.</p>
-<div id="acd5f80d" class="cell" data-execution_count="4">
+<div id="71fbf2dc" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc.<span class="bu">filter</span>(regex<span class="op">=</span><span class="st">"_rank"</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc_subset_drop.drop(columns <span class="op">=</span> [<span class="st">"B_match_weightclass_rank"</span>, <span class="st">"R_match_weightclass_rank"</span>, <span class="st">"B_Pound-for-Pound_rank"</span>, <span class="st">"better_rank"</span>, <span class="st">"R_Pound-for-Pound_rank"</span>]) </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>ufc_subset_keep <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> ufc <span class="cf">if</span> f <span class="kw">not</span> <span class="kw">in</span> ufc_subset_drop]</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">#With the code above we have a subset that has selected the 24 columns of interest</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a> ufc_subset <span class="op">=</span> ufc.melt(id_vars <span class="op">=</span> ufc_subset_keep,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                    value_cars <span class="op">=</span> ufc_subset_keep,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                    var_name <span class="op">=</span> <span class="st">"weight_class_rank"</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                    value_name <span class="op">=</span> <span class="st">"rank"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The code above is an implementation of using the melt function for the purpose stated above if we had to, instead we can just drop the 24 variables as shown in the following code chunk. Now we have 97 variables.</p>
+<div id="613edb1c" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc.<span class="bu">filter</span>(regex<span class="op">=</span><span class="st">"_rank"</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc_subset_drop.drop(columns <span class="op">=</span> [<span class="st">"B_match_weightclass_rank"</span>, <span class="st">"R_match_weightclass_rank"</span>, <span class="st">"B_Pound-for-Pound_rank"</span>, <span class="st">"better_rank"</span>, <span class="st">"R_Pound-for-Pound_rank"</span>]) </span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>ufc_subset_keep <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> ufc <span class="cf">if</span> f <span class="kw">not</span> <span class="kw">in</span> ufc_subset_drop]</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#With the code above we have a subset that has selected the 24 columns of interest</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a> ufc_subset <span class="op">=</span> ufc.melt(id_vars <span class="op">=</span> ufc_subset_keep,</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                    value_cars <span class="op">=</span> ufc_subset_keep,</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                    var_name <span class="op">=</span> <span class="st">"weight_class_rank"</span>,</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                    value_name <span class="op">=</span> <span class="st">"rank"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>The code above is an implementation of using the melt function for the purpose stated above. Instead we can just drop the 24 variables as shown in the following code chunk. Now we have 97 variables.</p>
-<div id="b59ce0a7" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc.<span class="bu">filter</span>(regex<span class="op">=</span><span class="st">"_rank"</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>ufc_subset_drop <span class="op">=</span> ufc_subset_drop.drop(columns <span class="op">=</span> [<span class="st">"B_match_weightclass_rank"</span>, <span class="st">"R_match_weightclass_rank"</span>, <span class="st">"B_Pound-for-Pound_rank"</span>, <span class="st">"better_rank"</span>, <span class="st">"R_Pound-for-Pound_rank"</span>]) </span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc.drop(columns<span class="op">=</span> ufc_subset_drop)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc.drop(columns<span class="op">=</span> ufc_subset_drop)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>97 variables is still a lot lets take a look to see if there are variables that will not be useful for out purposes, first lets take a look if there are variables that we will not be able to implement before the fight results. As we can see there are columns such as the round that the winner finished their opponent, the time of the finish, as well with the details of the finish.</p>
-<div id="7285f48b" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"total_fight_time_secs"</span>, <span class="st">"finish_round_time"</span>, <span class="st">"finish_round"</span>, <span class="st">"finish_details"</span>, <span class="st">"finish"</span>, <span class="st">"R_win_by_TKO_Doctor_Stoppage"</span>, <span class="st">"B_win_by_TKO_Doctor_Stoppage"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="c9803e50" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"total_fight_time_secs"</span>, <span class="st">"finish_round_time"</span>, <span class="st">"finish_round"</span>, <span class="st">"finish_details"</span>, <span class="st">"finish"</span>, <span class="st">"R_win_by_TKO_Doctor_Stoppage"</span>, <span class="st">"B_win_by_TKO_Doctor_Stoppage"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Another step we can take to reduce the amount of variables for our model is to drop columns that cannot be quantified or add any sort of information for our model such as the date of the event, the row id, R_ev, and B_ev. I also misunderstood a column as I believed this dataset had a column for each fighter’s ethnicity or place of birth which would be important since we have information on where the fight was held which might reveal if home-field advantage is important but turns out there is only information where the fight is held not on the individual fighter’s place of birth or ethnicity and I do not think it is feasible to add every single fighters date of birth or ethnicity so I made the decision to drop these columns as they will only add noise.</p>
-<div id="fca8eaa1" class="cell" data-execution_count="7">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"R_ev"</span>, <span class="st">"B_ev"</span>, <span class="st">"date"</span>, <span class="st">"Unnamed: 0"</span>, <span class="st">"empty_arena"</span>, <span class="st">"country"</span>, <span class="st">"location"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="833ae85a" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"R_ev"</span>, <span class="st">"B_ev"</span>, <span class="st">"date"</span>, <span class="st">"Unnamed: 0"</span>, <span class="st">"empty_arena"</span>, <span class="st">"country"</span>, <span class="st">"location"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>There also seems to be redundant data (multicolinearity), for example we have information on the reach of both fighters, which is most likely important, but we also have a column dedicated to telling us the reach difference so it is easy to see the redundnacy, another example is the individual weights of the fighters as they fight at the same weight class so we know they are already at the same weight. I also find it important to notice that there might be data that seems redundant but there might be good reasons to keep the variable and in this dataset it corresponds to the individual ages of the fighters and the weight difference because for example the columns that has the weight difference treats all 5 year age differences the same which is not the case in athletic sports for instance there is a big difference between a 27 year old fighting a 32 year old (both in their physical primes) and a 32 year old fighting a 37 year old (one in his prime the other years outside their prime). In the following code cell I display all variables that contain “_dif” and from there I will make the decision whether to drop the “dif” column or the corresponding columns it is related to.</p>
-<div id="e10b3e82" class="cell" data-execution_count="8">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ufc_diff_subset <span class="op">=</span> ufc.<span class="bu">filter</span>(regex <span class="op">=</span> <span class="st">'_dif'</span>)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ufc_diff_subset.head())</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.assign(sig_str_pct_diff <span class="op">=</span> ufc_cleaned_data[<span class="st">"R_avg_SIG_STR_pct"</span>] <span class="op">-</span> ufc_cleaned_data[<span class="st">"B_avg_SIG_STR_pct"</span>])</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.assign(td_pct_diff <span class="op">=</span> ufc_cleaned_data[<span class="st">"R_avg_TD_pct"</span>] <span class="op">-</span> ufc_cleaned_data[<span class="st">"B_avg_TD_pct"</span>])</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"B_current_lose_streak"</span>, <span class="st">"R_current_lose_streak"</span>, <span class="st">"B_current_win_streak"</span>, <span class="st">"R_current_win_streak"</span>, <span class="st">"B_draw"</span>, <span class="st">"R_draw"</span>, <span class="st">"B_avg_SIG_STR_landed"</span>, <span class="st">"R_avg_SIG_STR_landed"</span>, <span class="st">"B_avg_SIG_STR_pct"</span>, <span class="st">"R_avg_SIG_STR_pct"</span>, <span class="st">"B_avg_SUB_ATT"</span>, <span class="st">"R_avg_SUB_ATT"</span>, <span class="st">"B_avg_TD_landed"</span>, <span class="st">"R_avg_TD_landed"</span>, <span class="st">"B_longest_win_streak"</span>, <span class="st">"R_longest_win_streak"</span>, <span class="st">"B_losses"</span>, <span class="st">"R_losses"</span>, <span class="st">"B_total_rounds_fought"</span>, <span class="st">"R_total_rounds_fought"</span>, <span class="st">"B_total_title_bouts"</span>, <span class="st">"R_total_title_bouts"</span>, <span class="st">"B_win_by_Decision_Majority"</span>, <span class="st">"R_win_by_Decision_Majority"</span>, <span class="st">"B_Height_cms"</span>, <span class="st">"R_Height_cms"</span>, <span class="st">"B_Reach_cms"</span>, <span class="st">"R_Reach_cms"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="7dbcdedd" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>ufc_diff_subset <span class="op">=</span> ufc.<span class="bu">filter</span>(regex <span class="op">=</span> <span class="st">'_dif'</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(ufc_diff_subset.head())</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.assign(sig_str_pct_diff <span class="op">=</span> ufc_cleaned_data[<span class="st">"R_avg_SIG_STR_pct"</span>] <span class="op">-</span> ufc_cleaned_data[<span class="st">"B_avg_SIG_STR_pct"</span>])</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.assign(td_pct_diff <span class="op">=</span> ufc_cleaned_data[<span class="st">"R_avg_TD_pct"</span>] <span class="op">-</span> ufc_cleaned_data[<span class="st">"B_avg_TD_pct"</span>])</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>ufc_cleaned_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"B_current_lose_streak"</span>, <span class="st">"R_current_lose_streak"</span>, <span class="st">"B_current_win_streak"</span>, <span class="st">"R_current_win_streak"</span>, <span class="st">"B_draw"</span>, <span class="st">"R_draw"</span>, <span class="st">"B_avg_SIG_STR_landed"</span>, <span class="st">"R_avg_SIG_STR_landed"</span>, <span class="st">"B_avg_SIG_STR_pct"</span>, <span class="st">"R_avg_SIG_STR_pct"</span>, <span class="st">"B_avg_SUB_ATT"</span>, <span class="st">"R_avg_SUB_ATT"</span>, <span class="st">"B_avg_TD_landed"</span>, <span class="st">"R_avg_TD_landed"</span>, <span class="st">"B_longest_win_streak"</span>, <span class="st">"R_longest_win_streak"</span>, <span class="st">"B_losses"</span>, <span class="st">"R_losses"</span>, <span class="st">"B_total_rounds_fought"</span>, <span class="st">"R_total_rounds_fought"</span>, <span class="st">"B_total_title_bouts"</span>, <span class="st">"R_total_title_bouts"</span>, <span class="st">"B_win_by_Decision_Majority"</span>, <span class="st">"R_win_by_Decision_Majority"</span>, <span class="st">"B_Height_cms"</span>, <span class="st">"R_Height_cms"</span>, <span class="st">"B_Reach_cms"</span>, <span class="st">"R_Reach_cms"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   lose_streak_dif  win_streak_dif  longest_win_streak_dif  win_dif  loss_dif  \
 0                0             -11                      -9       -9         0   
@@ -233,30 +228,63 @@ Length: 121, dtype: int64</code></pre>
 </div>
 </div>
 <p>As we can see we are now at 57 variables and I was struggling what to do with all of these betting odds and after doing some research I believe that it would be more beneficial for me to take them out as I would like to base the model off of physicial attributes and past performence, and if I keep these betting odds this model can just become a reflection of those odds so in this next code cell I will remove them.</p>
-<div id="a778646b" class="cell" data-execution_count="9">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>ufc_clean_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"R_odds"</span>, <span class="st">"B_odds"</span>, <span class="st">"r_dec_odds"</span>, <span class="st">"b_dec_odds"</span>, <span class="st">"r_sub_odds"</span>, <span class="st">"b_sub_odds"</span>, <span class="st">"r_ko_odds"</span>, <span class="st">"b_ko_odds"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="52c5274d" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>ufc_clean_data <span class="op">=</span> ufc_cleaned_data.drop(columns <span class="op">=</span> [<span class="st">"R_odds"</span>, <span class="st">"B_odds"</span>, <span class="st">"r_dec_odds"</span>, <span class="st">"b_dec_odds"</span>, <span class="st">"r_sub_odds"</span>, <span class="st">"b_sub_odds"</span>, <span class="st">"r_ko_odds"</span>, <span class="st">"b_ko_odds"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now we are down to 49 columns and looking at a list of the columns I believe that there are no variables that need to be dropped. Something we now need to do is to decide whether or not to drop non-championship bouts so what I am going to do is create a copy of the dataset one that has only the championship fights and the other the total dataset up to this point. But first lets create a vizualization that shows us championship vs non-championship bouts.</p>
-<div id="1a9fa389" class="cell" data-execution_count="10">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>sns.set_theme(style <span class="op">=</span> <span class="st">"whitegrid"</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize <span class="op">=</span> (<span class="dv">8</span>, <span class="dv">5</span>))</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.countplot(data <span class="op">=</span> ufc, x <span class="op">=</span> <span class="st">"title_bout"</span>, palette <span class="op">=</span> <span class="st">"viridis"</span>)</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>ax.set_xticklabels([<span class="st">'Non-Championship'</span>, <span class="st">'Championship'</span>])</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"non-title vs title fights"</span>)</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"distribution of non-title vs title fights"</span>)</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"number of fights"</span>)</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="e1f1fd58" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>sns.set_theme(style <span class="op">=</span> <span class="st">"whitegrid"</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize <span class="op">=</span> (<span class="dv">8</span>, <span class="dv">5</span>))</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.countplot(data <span class="op">=</span> ufc, x <span class="op">=</span> <span class="st">"title_bout"</span>, palette <span class="op">=</span> <span class="st">"viridis"</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>ax.set_xticklabels([<span class="st">'Non-Championship'</span>, <span class="st">'Championship'</span>])</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"non-title vs title fights"</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"distribution of non-title vs title fights"</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"number of fights"</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>C:\Users\felip\AppData\Local\Temp\ipykernel_14980\1352250165.py:3: FutureWarning:
+<pre><code>C:\Users\felip\AppData\Local\Temp\ipykernel_29128\1352250165.py:3: FutureWarning:
 
 
 
 Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
 
 
-C:\Users\felip\AppData\Local\Temp\ipykernel_14980\1352250165.py:4: UserWarning:
+C:\Users\felip\AppData\Local\Temp\ipykernel_29128\1352250165.py:4: UserWarning:
 
 set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ufc_files/figure-html/cell-10-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As we can see the majority of the data is Non-Championship data so for that reason I want to create two datasets as stated prior one that has all observations and the other only championship bouts. Lets take a look at the distribution of wins regarding only championship bouts.</p>
+<div id="00e6a532" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>ufc_clean_total <span class="op">=</span> ufc_clean_data</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>ufc_clean_champ_only <span class="op">=</span> ufc_clean_data[ufc_clean_data[<span class="st">"title_bout"</span>]]</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>sns.set_theme(style<span class="op">=</span><span class="st">"whitegrid"</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>sns.countplot(</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    data<span class="op">=</span>ufc_clean_champ_only, </span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">'Winner'</span>, </span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    palette<span class="op">=</span>{<span class="st">'Red'</span>: <span class="st">'crimson'</span>, <span class="st">'Blue'</span>: <span class="st">'royalblue'</span>},</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    order<span class="op">=</span>[<span class="st">'Red'</span>, <span class="st">'Blue'</span>]</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">'Win Distribution in UFC Championship Bouts'</span>, fontsize<span class="op">=</span><span class="dv">15</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">'Corner Color'</span>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'Number of Wins'</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>C:\Users\felip\AppData\Local\Temp\ipykernel_29128\2623067493.py:5: FutureWarning:
+
+
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
@@ -267,33 +295,60 @@ set_ticklabels() should only be used with a fixed number of ticks, i.e. after se
 </div>
 </div>
 </div>
-<p>As we can see the majority of the data is Non-Championship data so for that reason I want to create two datasets as stated prior one that has all observations and the other only championship bouts.</p>
-<div id="88b51e08" class="cell" data-execution_count="11">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>ufc_clean_total <span class="op">=</span> ufc_clean_data</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>ufc_clean_champ_only <span class="op">=</span> ufc_clean_data[ufc_clean_data[<span class="st">"title_bout"</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Now lets take a look at the prior distribution regarding the whole data set</p>
+<div id="fa7879a8" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>sns.set_theme(style<span class="op">=</span><span class="st">"whitegrid"</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>sns.countplot(</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    data<span class="op">=</span>ufc_clean_total, </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">'Winner'</span>, </span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    palette<span class="op">=</span>{<span class="st">'Red'</span>: <span class="st">'crimson'</span>, <span class="st">'Blue'</span>: <span class="st">'royalblue'</span>},</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    order<span class="op">=</span>[<span class="st">'Red'</span>, <span class="st">'Blue'</span>]</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">'Win Distribution in UFC Bouts'</span>, fontsize<span class="op">=</span><span class="dv">15</span>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">'Corner Color'</span>)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'Number of Wins'</span>)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>C:\Users\felip\AppData\Local\Temp\ipykernel_29128\3574012835.py:3: FutureWarning:
+
+
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+</code></pre>
 </div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="ufc_files/figure-html/cell-12-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As we can see in both circumstances the Red corner is more likely to win and has a slightly higher chance to win in a championship bout over a non-championship bout.</p>
 <p>Now we can fit a simple model first so I would like to start with a logistic regression model in which we first have to transform our variable that we are trying to predict (Winner) into 1s and 0s from “Red” and “Blue” respectfully. Since we are using a logistic regression model we can only use numeric predictors and cannot have and NaNs in the data set so we need to prep our data.</p>
-<div id="adb50c47" class="cell" data-execution_count="12">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Here we create a copy of the cleaned dataset</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>ufc_clean_log <span class="op">=</span> ufc_clean_champ_only.copy() </span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co">#Here we conver our target variable into 1s and 0s</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>ufc_clean_log[<span class="st">'target'</span>] <span class="op">=</span> ufc_clean_log[<span class="st">'Winner'</span>].<span class="bu">map</span>({<span class="st">'Red'</span>: <span class="dv">1</span>, <span class="st">'Blue'</span>: <span class="dv">0</span>})</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co">#Here we extract only numeric columns</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>features_log <span class="op">=</span> ufc_clean_log.select_dtypes(include<span class="op">=</span>[<span class="st">'number'</span>])</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co">#Here we filter so columns have no missing values phfilll check run head on this</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>features_log <span class="op">=</span> [col <span class="cf">for</span> col <span class="kw">in</span> features_log.columns </span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> ufc_clean_log[col].isna().<span class="bu">sum</span>() <span class="op">==</span> <span class="dv">0</span> <span class="kw">and</span> col <span class="op">!=</span> <span class="st">'target'</span>]</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>model_df <span class="op">=</span> ufc_clean_log[features_log <span class="op">+</span> [<span class="st">'target'</span>]].dropna()</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co">#Here we split the data into predictors and our target variable</span></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> model_df[features_log]</span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> model_df[<span class="st">'target'</span>]</span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="co">#Here we split the data and fit the logistic regression model on the training set</span></span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>x_train, x_test, y_train, y_test <span class="op">=</span> train_test_split(x, y, test_size<span class="op">=</span><span class="fl">0.2</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>model_fit <span class="op">=</span> LogisticRegression(max_iter<span class="op">=</span><span class="dv">1000</span>) </span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>model_fit.fit(x_train, y_train)</span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="co">#here we test the model on the test set (unseen data)</span></span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>y_preds <span class="op">=</span> model_fit.predict(x_test)</span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(accuracy_score(y_test, y_preds))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="4441a4d3" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Here we create a copy of the cleaned dataset</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>ufc_clean_log <span class="op">=</span> ufc_clean_champ_only.copy() </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#Here we conver our target variable into 1s and 0s</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>ufc_clean_log[<span class="st">'target'</span>] <span class="op">=</span> ufc_clean_log[<span class="st">'Winner'</span>].<span class="bu">map</span>({<span class="st">'Red'</span>: <span class="dv">1</span>, <span class="st">'Blue'</span>: <span class="dv">0</span>})</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co">#Here we extract only numeric columns</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>features_log <span class="op">=</span> ufc_clean_log.select_dtypes(include<span class="op">=</span>[<span class="st">'number'</span>])</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co">#Here we filter so columns have no missing values phfilll check run head on this</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>features_log <span class="op">=</span> [col <span class="cf">for</span> col <span class="kw">in</span> features_log.columns </span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> ufc_clean_log[col].isna().<span class="bu">sum</span>() <span class="op">==</span> <span class="dv">0</span> <span class="kw">and</span> col <span class="op">!=</span> <span class="st">'target'</span>]</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>model_df <span class="op">=</span> ufc_clean_log[features_log <span class="op">+</span> [<span class="st">'target'</span>]].dropna()</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co">#Here we split the data into predictors and our target variable</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> model_df[features_log]</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> model_df[<span class="st">'target'</span>]</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="co">#Here we split the data and fit the logistic regression model on the training set</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>x_train, x_test, y_train, y_test <span class="op">=</span> train_test_split(x, y, test_size<span class="op">=</span><span class="fl">0.2</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>model_fit <span class="op">=</span> LogisticRegression(max_iter<span class="op">=</span><span class="dv">1000</span>) </span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>model_fit.fit(x_train, y_train)</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a><span class="co">#here we test the model on the test set (unseen data) hopefully we get a good result</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>y_preds <span class="op">=</span> model_fit.predict(x_test)</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(accuracy_score(y_test, y_preds))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>0.7068965517241379</code></pre>
 </div>
@@ -312,108 +367,104 @@ Please also refer to the documentation for alternative solver options:
 </div>
 </div>
 <p>Lets see how our model performs on some championship bouts that have happened since the last update of this dataset. We have to make a new observation for the bout in question and use our model to predict the outcome. Since it would be very tedious to get every stat needed for a new observation I decided to use AI to retrieve them. This new observation is a fight that happened Jan 24 in which Gaethje won.</p>
-<div id="b13a3f33" class="cell" data-execution_count="13">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Creating the stats for Gaethje (Red) vs Pimblett (Blue)</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>new_fight_stats <span class="op">=</span> {</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'no_of_rounds'</span>: [<span class="dv">5</span>],</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Split'</span>: [<span class="dv">0</span>],</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Unanimous'</span>: [<span class="dv">6</span>],</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_KO/TKO'</span>: [<span class="dv">7</span>],</span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Submission'</span>: [<span class="dv">10</span>],</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_wins'</span>: [<span class="dv">23</span>],</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_Weight_lbs'</span>: [<span class="dv">155</span>],</span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Split'</span>: [<span class="dv">1</span>],</span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Unanimous'</span>: [<span class="dv">5</span>],</span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_KO/TKO'</span>: [<span class="dv">20</span>],</span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Submission'</span>: [<span class="dv">1</span>],</span>
-<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_wins'</span>: [<span class="dv">27</span>],</span>
-<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_Weight_lbs'</span>: [<span class="dv">155</span>],</span>
-<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_age'</span>: [<span class="dv">37</span>],</span>
-<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_age'</span>: [<span class="dv">31</span>],</span>
-<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'lose_streak_dif'</span>: [<span class="dv">0</span>], <span class="co"># Both coming off wins</span></span>
-<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_streak_dif'</span>: [<span class="op">-</span><span class="dv">6</span>], <span class="co"># Paddy had a longer streak (7 vs 1)</span></span>
-<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">'longest_win_streak_dif'</span>: [<span class="dv">2</span>], <span class="co"># Gaethje's peak vs Paddy's</span></span>
-<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_dif'</span>: [<span class="dv">4</span>],</span>
-<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'loss_dif'</span>: [<span class="dv">1</span>],</span>
-<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_round_dif'</span>: [<span class="dv">30</span>], <span class="co"># Gaethje has much more cage time</span></span>
-<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_title_bout_dif'</span>: [<span class="dv">6</span>], <span class="co"># Paddy has never been in a UFC title bout</span></span>
-<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ko_dif'</span>: [<span class="dv">13</span>],</span>
-<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sub_dif'</span>: [<span class="op">-</span><span class="dv">9</span>],</span>
-<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">'height_dif'</span>: [<span class="dv">1</span>], <span class="co"># 5'11 vs 5'10</span></span>
-<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">'reach_dif'</span>: [<span class="op">-</span><span class="dv">3</span>], <span class="co"># Paddy has a reach advantage (73 vs 70)</span></span>
-<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">'age_dif'</span>: [<span class="dv">6</span>],</span>
-<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sig_str_dif'</span>: [<span class="fl">1.4</span>], <span class="co"># 6.59 vs 5.19</span></span>
-<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_sub_att_dif'</span>: [<span class="op">-</span><span class="fl">1.7</span>],</span>
-<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_td_dif'</span>: [<span class="op">-</span><span class="fl">0.86</span>],</span>
-<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">'constant_1'</span>: [<span class="dv">1</span>]</span>
-<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-38"><a href="#cb19-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the observation</span></span>
-<span id="cb19-39"><a href="#cb19-39" aria-hidden="true" tabindex="-1"></a>X_new <span class="op">=</span> pd.DataFrame(new_fight_stats)</span>
-<span id="cb19-40"><a href="#cb19-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-41"><a href="#cb19-41" aria-hidden="true" tabindex="-1"></a><span class="co"># --- THE PREDICTION ---</span></span>
-<span id="cb19-42"><a href="#cb19-42" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Who does the model pick?</span></span>
-<span id="cb19-43"><a href="#cb19-43" aria-hidden="true" tabindex="-1"></a>fight_prediction <span class="op">=</span> model_fit.predict(X_new)</span>
-<span id="cb19-44"><a href="#cb19-44" aria-hidden="true" tabindex="-1"></a>winner_label <span class="op">=</span> <span class="st">"RED (Gaethje)"</span> <span class="cf">if</span> fight_prediction[<span class="dv">0</span>] <span class="op">==</span> <span class="dv">1</span> <span class="cf">else</span> <span class="st">"BLUE (Pimblett)"</span></span>
-<span id="cb19-45"><a href="#cb19-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-46"><a href="#cb19-46" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. How confident is it?</span></span>
-<span id="cb19-47"><a href="#cb19-47" aria-hidden="true" tabindex="-1"></a>probs <span class="op">=</span> model_fit.predict_proba(X_new)</span>
-<span id="cb19-48"><a href="#cb19-48" aria-hidden="true" tabindex="-1"></a>confidence <span class="op">=</span> probs[<span class="dv">0</span>][<span class="dv">1</span>] <span class="cf">if</span> fight_prediction[<span class="dv">0</span>] <span class="op">==</span> <span class="dv">1</span> <span class="cf">else</span> probs[<span class="dv">0</span>][<span class="dv">0</span>]</span>
-<span id="cb19-49"><a href="#cb19-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-50"><a href="#cb19-50" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Predicted Winner: </span><span class="sc">{</span>winner_label<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb19-51"><a href="#cb19-51" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Model Confidence: </span><span class="sc">{</span>confidence<span class="sc">:.2%}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="46560d15" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Creating the stats for Gaethje (Red) vs Pimblett (Blue)</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>new_fight_stats <span class="op">=</span> {</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'no_of_rounds'</span>: [<span class="dv">5</span>],</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Split'</span>: [<span class="dv">0</span>],</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Unanimous'</span>: [<span class="dv">6</span>],</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_KO/TKO'</span>: [<span class="dv">7</span>],</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Submission'</span>: [<span class="dv">10</span>],</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_wins'</span>: [<span class="dv">23</span>],</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_Weight_lbs'</span>: [<span class="dv">155</span>],</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Split'</span>: [<span class="dv">1</span>],</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Unanimous'</span>: [<span class="dv">5</span>],</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_KO/TKO'</span>: [<span class="dv">20</span>],</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Submission'</span>: [<span class="dv">1</span>],</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_wins'</span>: [<span class="dv">27</span>],</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_Weight_lbs'</span>: [<span class="dv">155</span>],</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_age'</span>: [<span class="dv">37</span>],</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_age'</span>: [<span class="dv">31</span>],</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'lose_streak_dif'</span>: [<span class="dv">0</span>], <span class="co"># Both coming off wins</span></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_streak_dif'</span>: [<span class="op">-</span><span class="dv">6</span>], <span class="co"># Paddy had a longer streak (7 vs 1)</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'longest_win_streak_dif'</span>: [<span class="dv">2</span>], <span class="co"># Gaethje's peak vs Paddy's</span></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_dif'</span>: [<span class="dv">4</span>],</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">'loss_dif'</span>: [<span class="dv">1</span>],</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_round_dif'</span>: [<span class="dv">30</span>], <span class="co"># Gaethje has much more cage time</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_title_bout_dif'</span>: [<span class="dv">6</span>], <span class="co"># Paddy has never been in a UFC title bout</span></span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ko_dif'</span>: [<span class="dv">13</span>],</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sub_dif'</span>: [<span class="op">-</span><span class="dv">9</span>],</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">'height_dif'</span>: [<span class="dv">1</span>], <span class="co"># 5'11 vs 5'10</span></span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">'reach_dif'</span>: [<span class="op">-</span><span class="dv">3</span>], <span class="co"># Paddy has a reach advantage (73 vs 70)</span></span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">'age_dif'</span>: [<span class="dv">6</span>],</span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sig_str_dif'</span>: [<span class="fl">1.4</span>], <span class="co"># 6.59 vs 5.19</span></span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_sub_att_dif'</span>: [<span class="op">-</span><span class="fl">1.7</span>],</span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_td_dif'</span>: [<span class="op">-</span><span class="fl">0.86</span>],</span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">'constant_1'</span>: [<span class="dv">1</span>]</span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the observation</span></span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a>X_new <span class="op">=</span> pd.DataFrame(new_fight_stats)</span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a><span class="co"># --- THE PREDICTION ---</span></span>
+<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Who does the model pick?</span></span>
+<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a>fight_prediction <span class="op">=</span> model_fit.predict(X_new)</span>
+<span id="cb21-42"><a href="#cb21-42" aria-hidden="true" tabindex="-1"></a>winner_label <span class="op">=</span> <span class="st">"RED (Gaethje)"</span> <span class="cf">if</span> fight_prediction[<span class="dv">0</span>] <span class="op">==</span> <span class="dv">1</span> <span class="cf">else</span> <span class="st">"BLUE (Pimblett)"</span></span>
+<span id="cb21-43"><a href="#cb21-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-44"><a href="#cb21-44" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. How confident is it?</span></span>
+<span id="cb21-45"><a href="#cb21-45" aria-hidden="true" tabindex="-1"></a>probs <span class="op">=</span> model_fit.predict_proba(X_new)</span>
+<span id="cb21-46"><a href="#cb21-46" aria-hidden="true" tabindex="-1"></a>confidence <span class="op">=</span> probs[<span class="dv">0</span>][<span class="dv">1</span>] <span class="cf">if</span> fight_prediction[<span class="dv">0</span>] <span class="op">==</span> <span class="dv">1</span> <span class="cf">else</span> probs[<span class="dv">0</span>][<span class="dv">0</span>]</span>
+<span id="cb21-47"><a href="#cb21-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-48"><a href="#cb21-48" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Predicted Winner: </span><span class="sc">{</span>winner_label<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb21-49"><a href="#cb21-49" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Model Confidence: </span><span class="sc">{</span>confidence<span class="sc">:.2%}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Predicted Winner: RED (Gaethje)
 Model Confidence: 100.00%</code></pre>
 </div>
 </div>
 <p>Our model was right!!! lets try another and I am feeling like our model is performing a little too good lets look at a fight considered the greatest upset in UFC history Adesanya vs.&nbsp;Strickland (Adesanya was a heavy favorite)</p>
-<div id="4409e14c" class="cell" data-execution_count="14">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Stats for Sean Strickland (Red) vs Israel Adesanya (Blue) - UFC 293</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>strickland_vs_izzy <span class="op">=</span> {</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'no_of_rounds'</span>: [<span class="dv">5</span>],</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Split'</span>: [<span class="dv">0</span>],</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Unanimous'</span>: [<span class="dv">6</span>],</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_KO/TKO'</span>: [<span class="dv">15</span>],</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Submission'</span>: [<span class="dv">0</span>],</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_wins'</span>: [<span class="dv">24</span>],</span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_Weight_lbs'</span>: [<span class="dv">185</span>],</span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Split'</span>: [<span class="dv">2</span>],</span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Unanimous'</span>: [<span class="dv">10</span>],</span>
-<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_KO/TKO'</span>: [<span class="dv">11</span>],</span>
-<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Submission'</span>: [<span class="dv">4</span>],</span>
-<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_wins'</span>: [<span class="dv">27</span>],</span>
-<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_Weight_lbs'</span>: [<span class="dv">185</span>],</span>
-<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_age'</span>: [<span class="dv">32</span>],</span>
-<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_age'</span>: [<span class="dv">34</span>],</span>
-<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'lose_streak_dif'</span>: [<span class="dv">0</span>],</span>
-<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_streak_dif'</span>: [<span class="dv">1</span>],   <span class="co"># Strickland was on 2-win streak, Izzy on 1</span></span>
-<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">'longest_win_streak_dif'</span>: [<span class="op">-</span><span class="dv">1</span>], </span>
-<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_dif'</span>: [<span class="dv">3</span>],</span>
-<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'loss_dif'</span>: [<span class="dv">3</span>],         <span class="co"># Strickland had 5 losses, Izzy had 2</span></span>
-<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_round_dif'</span>: [<span class="dv">8</span>],  <span class="co"># Strickland had more total rounds in MMA</span></span>
-<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_title_bout_dif'</span>: [<span class="op">-</span><span class="dv">10</span>], <span class="co"># Huge gap: Izzy had 10 title bouts, Sean had 0</span></span>
-<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ko_dif'</span>: [<span class="op">-</span><span class="dv">4</span>],</span>
-<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sub_dif'</span>: [<span class="dv">4</span>],</span>
-<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">'height_dif'</span>: [<span class="op">-</span><span class="dv">3</span>],      <span class="co"># 6'1 vs 6'4</span></span>
-<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">'reach_dif'</span>: [<span class="op">-</span><span class="dv">4</span>],       <span class="co"># 76" vs 80"</span></span>
-<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">'age_dif'</span>: [<span class="op">-</span><span class="dv">2</span>],</span>
-<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sig_str_dif'</span>: [<span class="fl">1.92</span>],   <span class="co"># 5.86 landed/min vs 3.94 landed/min</span></span>
-<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_sub_att_dif'</span>: [<span class="fl">0.2</span>],</span>
-<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_td_dif'</span>: [<span class="fl">0.94</span>],    <span class="co"># 1.00 vs 0.06</span></span>
-<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">'constant_1'</span>: [<span class="dv">1</span>]</span>
-<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a>X_strickland <span class="op">=</span> pd.DataFrame(strickland_vs_izzy)</span>
-<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the prediction</span></span>
-<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a>prob <span class="op">=</span> model_fit.predict_proba(X_strickland)</span>
-<span id="cb21-42"><a href="#cb21-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Strickland Win Probability: </span><span class="sc">{</span>prob[<span class="dv">0</span>][<span class="dv">1</span>]<span class="sc">:.2%}</span><span class="ss">"</span>)</span>
-<span id="cb21-43"><a href="#cb21-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Adesanya Win Probability: </span><span class="sc">{</span>prob[<span class="dv">0</span>][<span class="dv">0</span>]<span class="sc">:.2%}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="ff521c69" class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Stats for Sean Strickland (Red) vs Israel Adesanya (Blue) - UFC 293</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>strickland_vs_izzy <span class="op">=</span> {</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'no_of_rounds'</span>: [<span class="dv">5</span>],</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Split'</span>: [<span class="dv">0</span>],</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Unanimous'</span>: [<span class="dv">6</span>],</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_KO/TKO'</span>: [<span class="dv">15</span>],</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Submission'</span>: [<span class="dv">0</span>],</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_wins'</span>: [<span class="dv">24</span>],</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_Weight_lbs'</span>: [<span class="dv">185</span>],</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Split'</span>: [<span class="dv">2</span>],</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Unanimous'</span>: [<span class="dv">10</span>],</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_KO/TKO'</span>: [<span class="dv">11</span>],</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Submission'</span>: [<span class="dv">4</span>],</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_wins'</span>: [<span class="dv">27</span>],</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_Weight_lbs'</span>: [<span class="dv">185</span>],</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_age'</span>: [<span class="dv">32</span>],</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_age'</span>: [<span class="dv">34</span>],</span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'lose_streak_dif'</span>: [<span class="dv">0</span>],</span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_streak_dif'</span>: [<span class="dv">1</span>],   <span class="co"># Strickland was on 2-win streak, Izzy on 1</span></span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'longest_win_streak_dif'</span>: [<span class="op">-</span><span class="dv">1</span>], </span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_dif'</span>: [<span class="dv">3</span>],</span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">'loss_dif'</span>: [<span class="dv">3</span>],         <span class="co"># Strickland had 5 losses, Izzy had 2</span></span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_round_dif'</span>: [<span class="dv">8</span>],  <span class="co"># Strickland had more total rounds in MMA</span></span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_title_bout_dif'</span>: [<span class="op">-</span><span class="dv">10</span>], <span class="co"># Huge gap: Izzy had 10 title bouts, Sean had 0</span></span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ko_dif'</span>: [<span class="op">-</span><span class="dv">4</span>],</span>
+<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sub_dif'</span>: [<span class="dv">4</span>],</span>
+<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">'height_dif'</span>: [<span class="op">-</span><span class="dv">3</span>],      <span class="co"># 6'1 vs 6'4</span></span>
+<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">'reach_dif'</span>: [<span class="op">-</span><span class="dv">4</span>],       <span class="co"># 76" vs 80"</span></span>
+<span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">'age_dif'</span>: [<span class="op">-</span><span class="dv">2</span>],</span>
+<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sig_str_dif'</span>: [<span class="fl">1.92</span>],   <span class="co"># 5.86 landed/min vs 3.94 landed/min</span></span>
+<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_sub_att_dif'</span>: [<span class="fl">0.2</span>],</span>
+<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_td_dif'</span>: [<span class="fl">0.94</span>],    <span class="co"># 1.00 vs 0.06</span></span>
+<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">'constant_1'</span>: [<span class="dv">1</span>]</span>
+<span id="cb23-34"><a href="#cb23-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb23-35"><a href="#cb23-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-36"><a href="#cb23-36" aria-hidden="true" tabindex="-1"></a>X_strickland <span class="op">=</span> pd.DataFrame(strickland_vs_izzy)</span>
+<span id="cb23-37"><a href="#cb23-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-38"><a href="#cb23-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the prediction</span></span>
+<span id="cb23-39"><a href="#cb23-39" aria-hidden="true" tabindex="-1"></a>prob <span class="op">=</span> model_fit.predict_proba(X_strickland)</span>
+<span id="cb23-40"><a href="#cb23-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Strickland Win Probability: </span><span class="sc">{</span>prob[<span class="dv">0</span>][<span class="dv">1</span>]<span class="sc">:.2%}</span><span class="ss">"</span>)</span>
+<span id="cb23-41"><a href="#cb23-41" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Adesanya Win Probability: </span><span class="sc">{</span>prob[<span class="dv">0</span>][<span class="dv">0</span>]<span class="sc">:.2%}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Strickland Win Probability: 0.53%
 Adesanya Win Probability: 99.47%</code></pre>
@@ -421,104 +472,100 @@ Adesanya Win Probability: 99.47%</code></pre>
 </div>
 <p>As we can see our model predicted that there was over a 99% chance that Adesanya won which shows why this was such a great upset. It displays how it is hard to quantify a wildcard aspect to bouts.</p>
 <p>Lets check a toss up fight Strickland vs Du Plessis(odds around -115 and -105)</p>
-<div id="83face5e" class="cell" data-execution_count="15">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Stats for Sean Strickland (Red) vs Dricus Du Plessis (Blue) - UFC 297</span></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>strickland_vs_dricus <span class="op">=</span> {</span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'no_of_rounds'</span>: [<span class="dv">5</span>],</span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Split'</span>: [<span class="dv">0</span>],</span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Unanimous'</span>: [<span class="dv">0</span>],</span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_KO/TKO'</span>: [<span class="dv">19</span>], </span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Submission'</span>: [<span class="dv">1</span>],</span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_wins'</span>: [<span class="dv">20</span>],</span>
-<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_Weight_lbs'</span>: [<span class="dv">185</span>],</span>
-<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Split'</span>: [<span class="dv">2</span>],</span>
-<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Unanimous'</span>: [<span class="dv">10</span>],</span>
-<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_KO/TKO'</span>: [<span class="dv">11</span>],</span>
-<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Submission'</span>: [<span class="dv">4</span>],</span>
-<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_wins'</span>: [<span class="dv">28</span>],</span>
-<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_Weight_lbs'</span>: [<span class="dv">185</span>],</span>
-<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_age'</span>: [<span class="dv">32</span>],</span>
-<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_age'</span>: [<span class="dv">30</span>],</span>
-<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'lose_streak_dif'</span>: [<span class="dv">0</span>],</span>
-<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_streak_dif'</span>: [<span class="op">-</span><span class="dv">8</span>], <span class="co"># Dricus had a massive 9-fight win streak</span></span>
-<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">'longest_win_streak_dif'</span>: [<span class="op">-</span><span class="dv">3</span>], </span>
-<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_dif'</span>: [<span class="dv">8</span>],</span>
-<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'loss_dif'</span>: [<span class="dv">3</span>], <span class="co"># Strickland had more experience but more losses</span></span>
-<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_round_dif'</span>: [<span class="dv">24</span>], </span>
-<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_title_bout_dif'</span>: [<span class="dv">1</span>], <span class="co"># Strickland was the champ, Dricus's first title bout</span></span>
-<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ko_dif'</span>: [<span class="op">-</span><span class="dv">8</span>],</span>
-<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sub_dif'</span>: [<span class="dv">3</span>],</span>
-<span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">'height_dif'</span>: [<span class="dv">1</span>], <span class="co"># 6'1" vs 6'0"</span></span>
-<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">'reach_dif'</span>: [<span class="dv">0</span>], <span class="co"># Both have a 76" reach</span></span>
-<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">'age_dif'</span>: [<span class="dv">2</span>],</span>
-<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sig_str_dif'</span>: [<span class="op">-</span><span class="fl">0.87</span>], <span class="co"># Du Plessis actually had higher volume (6.95 vs 6.08)</span></span>
-<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_sub_att_dif'</span>: [<span class="op">-</span><span class="fl">0.8</span>],</span>
-<span id="cb23-34"><a href="#cb23-34" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_td_dif'</span>: [<span class="op">-</span><span class="fl">2.72</span>], <span class="co"># Dricus is a much heavier grappler (3.72 vs 1.00)</span></span>
-<span id="cb23-35"><a href="#cb23-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">'constant_1'</span>: [<span class="dv">1</span>]</span>
-<span id="cb23-36"><a href="#cb23-36" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb23-37"><a href="#cb23-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-38"><a href="#cb23-38" aria-hidden="true" tabindex="-1"></a>X_tossup <span class="op">=</span> pd.DataFrame(strickland_vs_dricus)</span>
-<span id="cb23-39"><a href="#cb23-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-40"><a href="#cb23-40" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict!</span></span>
-<span id="cb23-41"><a href="#cb23-41" aria-hidden="true" tabindex="-1"></a>prob <span class="op">=</span> model_fit.predict_proba(X_tossup)</span>
-<span id="cb23-42"><a href="#cb23-42" aria-hidden="true" tabindex="-1"></a>winner <span class="op">=</span> <span class="st">"STRICKLAND (Red)"</span> <span class="cf">if</span> prob[<span class="dv">0</span>][<span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.5</span> <span class="cf">else</span> <span class="st">"DU PLESSIS (Blue)"</span></span>
-<span id="cb23-43"><a href="#cb23-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Predicted Winner: </span><span class="sc">{</span>winner<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb23-44"><a href="#cb23-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Confidence: </span><span class="sc">{</span><span class="bu">max</span>(prob[<span class="dv">0</span>])<span class="sc">:.2%}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="22cdf421" class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Stats for Sean Strickland (Red) vs Dricus Du Plessis (Blue) - UFC 297</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>strickland_vs_dricus <span class="op">=</span> {</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'no_of_rounds'</span>: [<span class="dv">5</span>],</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Split'</span>: [<span class="dv">0</span>],</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Unanimous'</span>: [<span class="dv">0</span>],</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_KO/TKO'</span>: [<span class="dv">19</span>], </span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Submission'</span>: [<span class="dv">1</span>],</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_wins'</span>: [<span class="dv">20</span>],</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_Weight_lbs'</span>: [<span class="dv">185</span>],</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Split'</span>: [<span class="dv">2</span>],</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Unanimous'</span>: [<span class="dv">10</span>],</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_KO/TKO'</span>: [<span class="dv">11</span>],</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Submission'</span>: [<span class="dv">4</span>],</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_wins'</span>: [<span class="dv">28</span>],</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_Weight_lbs'</span>: [<span class="dv">185</span>],</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_age'</span>: [<span class="dv">32</span>],</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_age'</span>: [<span class="dv">30</span>],</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'lose_streak_dif'</span>: [<span class="dv">0</span>],</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_streak_dif'</span>: [<span class="op">-</span><span class="dv">8</span>], <span class="co"># Dricus had a massive 9-fight win streak</span></span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'longest_win_streak_dif'</span>: [<span class="op">-</span><span class="dv">3</span>], </span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_dif'</span>: [<span class="dv">8</span>],</span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">'loss_dif'</span>: [<span class="dv">3</span>], <span class="co"># Strickland had more experience but more losses</span></span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_round_dif'</span>: [<span class="dv">24</span>], </span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_title_bout_dif'</span>: [<span class="dv">1</span>], <span class="co"># Strickland was the champ, Dricus's first title bout</span></span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ko_dif'</span>: [<span class="op">-</span><span class="dv">8</span>],</span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sub_dif'</span>: [<span class="dv">3</span>],</span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">'height_dif'</span>: [<span class="dv">1</span>], <span class="co"># 6'1" vs 6'0"</span></span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">'reach_dif'</span>: [<span class="dv">0</span>], <span class="co"># Both have a 76" reach</span></span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">'age_dif'</span>: [<span class="dv">2</span>],</span>
+<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sig_str_dif'</span>: [<span class="op">-</span><span class="fl">0.87</span>], <span class="co"># Du Plessis actually had higher volume (6.95 vs 6.08)</span></span>
+<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_sub_att_dif'</span>: [<span class="op">-</span><span class="fl">0.8</span>],</span>
+<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_td_dif'</span>: [<span class="op">-</span><span class="fl">2.72</span>], <span class="co"># Dricus is a much heavier grappler (3.72 vs 1.00)</span></span>
+<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">'constant_1'</span>: [<span class="dv">1</span>]</span>
+<span id="cb25-34"><a href="#cb25-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb25-35"><a href="#cb25-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-36"><a href="#cb25-36" aria-hidden="true" tabindex="-1"></a>X_tossup <span class="op">=</span> pd.DataFrame(strickland_vs_dricus)</span>
+<span id="cb25-37"><a href="#cb25-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-38"><a href="#cb25-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict!</span></span>
+<span id="cb25-39"><a href="#cb25-39" aria-hidden="true" tabindex="-1"></a>prob <span class="op">=</span> model_fit.predict_proba(X_tossup)</span>
+<span id="cb25-40"><a href="#cb25-40" aria-hidden="true" tabindex="-1"></a>winner <span class="op">=</span> <span class="st">"STRICKLAND (Red)"</span> <span class="cf">if</span> prob[<span class="dv">0</span>][<span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.5</span> <span class="cf">else</span> <span class="st">"DU PLESSIS (Blue)"</span></span>
+<span id="cb25-41"><a href="#cb25-41" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Predicted Winner: </span><span class="sc">{</span>winner<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb25-42"><a href="#cb25-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Confidence: </span><span class="sc">{</span><span class="bu">max</span>(prob[<span class="dv">0</span>])<span class="sc">:.2%}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Predicted Winner: DU PLESSIS (Blue)
 Confidence: 100.00%</code></pre>
 </div>
 </div>
 <p>This was a controversial win but the model predicted it right, to wrap this up lets check the prediction for this weekend’s championship bout Volkanovski vs Lopes</p>
-<div id="171b8044" class="cell" data-execution_count="16">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Stats for Alexander Volkanovski (Red) vs Diego Lopes (Blue) - UFC 325</span></span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>volk_vs_lopes_rematch <span class="op">=</span> {</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'no_of_rounds'</span>: [<span class="dv">5</span>],</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Split'</span>: [<span class="dv">0</span>],</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Unanimous'</span>: [<span class="dv">3</span>],</span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_KO/TKO'</span>: [<span class="dv">3</span>],   <span class="co"># Includes recent win over Jean Silva</span></span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Submission'</span>: [<span class="dv">1</span>],</span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_wins'</span>: [<span class="dv">27</span>],</span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_Weight_lbs'</span>: [<span class="dv">145</span>],</span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Split'</span>: [<span class="dv">1</span>],</span>
-<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Unanimous'</span>: [<span class="dv">11</span>],</span>
-<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_KO/TKO'</span>: [<span class="dv">13</span>],</span>
-<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Submission'</span>: [<span class="dv">3</span>],</span>
-<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_wins'</span>: [<span class="dv">27</span>],</span>
-<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_Weight_lbs'</span>: [<span class="dv">145</span>],</span>
-<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_age'</span>: [<span class="dv">37</span>],</span>
-<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_age'</span>: [<span class="dv">31</span>],</span>
-<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'lose_streak_dif'</span>: [<span class="dv">0</span>],</span>
-<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_streak_dif'</span>: [<span class="op">-</span><span class="dv">1</span>], <span class="co"># Lopes is on a 1-win streak, Volk technically has 1 win (their last fight)</span></span>
-<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">'longest_win_streak_dif'</span>: [<span class="dv">10</span>], <span class="co"># Volk's legendary 12-fight UFC streak</span></span>
-<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_dif'</span>: [<span class="dv">0</span>], <span class="co"># Both sit at 27 pro wins</span></span>
-<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'loss_dif'</span>: [<span class="op">-</span><span class="dv">3</span>], <span class="co"># Volk has 4 losses, Lopes has 7</span></span>
-<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_round_dif'</span>: [<span class="dv">25</span>], <span class="co"># Volk has far more 5-round experience</span></span>
-<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_title_bout_dif'</span>: [<span class="dv">14</span>], <span class="co"># Volk has 15 title fights, Lopes has 1</span></span>
-<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ko_dif'</span>: [<span class="dv">10</span>],</span>
-<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sub_dif'</span>: [<span class="dv">2</span>],</span>
-<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">'height_dif'</span>: [<span class="op">-</span><span class="dv">5</span>], <span class="co"># 5'6" vs 5'11" (Huge height gap)</span></span>
-<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">'reach_dif'</span>: [<span class="op">-</span><span class="dv">1</span>], <span class="co"># 71" vs 72"</span></span>
-<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">'age_dif'</span>: [<span class="dv">6</span>],</span>
-<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sig_str_dif'</span>: [<span class="fl">2.08</span>], <span class="co"># 6.18 vs 4.10 (Landed per minute)</span></span>
-<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_sub_att_dif'</span>: [<span class="op">-</span><span class="fl">1.5</span>],</span>
-<span id="cb25-34"><a href="#cb25-34" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_td_dif'</span>: [<span class="fl">0.88</span>], <span class="co"># 1.67 vs 0.79 (Takedowns per 15 min)</span></span>
-<span id="cb25-35"><a href="#cb25-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">'constant_1'</span>: [<span class="dv">1</span>]</span>
-<span id="cb25-36"><a href="#cb25-36" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb25-37"><a href="#cb25-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-38"><a href="#cb25-38" aria-hidden="true" tabindex="-1"></a>X_rematch <span class="op">=</span> pd.DataFrame(volk_vs_lopes_rematch)</span>
-<span id="cb25-39"><a href="#cb25-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-40"><a href="#cb25-40" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the prediction</span></span>
-<span id="cb25-41"><a href="#cb25-41" aria-hidden="true" tabindex="-1"></a>prediction <span class="op">=</span> model_fit.predict(X_rematch)</span>
-<span id="cb25-42"><a href="#cb25-42" aria-hidden="true" tabindex="-1"></a>probs <span class="op">=</span> model_fit.predict_proba(X_rematch)</span>
-<span id="cb25-43"><a href="#cb25-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-44"><a href="#cb25-44" aria-hidden="true" tabindex="-1"></a>winner <span class="op">=</span> <span class="st">"VOLKANOVSKI (Red)"</span> <span class="cf">if</span> prediction[<span class="dv">0</span>] <span class="op">==</span> <span class="dv">1</span> <span class="cf">else</span> <span class="st">"LOPES (Blue)"</span></span>
-<span id="cb25-45"><a href="#cb25-45" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Predicted Winner: </span><span class="sc">{</span>winner<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb25-46"><a href="#cb25-46" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Confidence: </span><span class="sc">{</span>probs[<span class="dv">0</span>][prediction[<span class="dv">0</span>]]<span class="sc">:.2%}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="870f7332" class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Stats for Alexander Volkanovski (Red) vs Diego Lopes (Blue) - UFC 325</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>volk_vs_lopes_rematch <span class="op">=</span> {</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'no_of_rounds'</span>: [<span class="dv">5</span>],</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Split'</span>: [<span class="dv">0</span>],</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Decision_Unanimous'</span>: [<span class="dv">3</span>],</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_KO/TKO'</span>: [<span class="dv">3</span>],   <span class="co"># Includes recent win over Jean Silva</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_win_by_Submission'</span>: [<span class="dv">1</span>],</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_wins'</span>: [<span class="dv">27</span>],</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_Weight_lbs'</span>: [<span class="dv">145</span>],</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Split'</span>: [<span class="dv">1</span>],</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Decision_Unanimous'</span>: [<span class="dv">11</span>],</span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_KO/TKO'</span>: [<span class="dv">13</span>],</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_win_by_Submission'</span>: [<span class="dv">3</span>],</span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_wins'</span>: [<span class="dv">27</span>],</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_Weight_lbs'</span>: [<span class="dv">145</span>],</span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'R_age'</span>: [<span class="dv">37</span>],</span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'B_age'</span>: [<span class="dv">31</span>],</span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'lose_streak_dif'</span>: [<span class="dv">0</span>],</span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_streak_dif'</span>: [<span class="op">-</span><span class="dv">1</span>], <span class="co"># Lopes is on a 1-win streak, Volk technically has 1 win (their last fight)</span></span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'longest_win_streak_dif'</span>: [<span class="dv">10</span>], <span class="co"># Volk's legendary 12-fight UFC streak</span></span>
+<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'win_dif'</span>: [<span class="dv">0</span>], <span class="co"># Both sit at 27 pro wins</span></span>
+<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">'loss_dif'</span>: [<span class="op">-</span><span class="dv">3</span>], <span class="co"># Volk has 4 losses, Lopes has 7</span></span>
+<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_round_dif'</span>: [<span class="dv">25</span>], <span class="co"># Volk has far more 5-round experience</span></span>
+<span id="cb27-24"><a href="#cb27-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'total_title_bout_dif'</span>: [<span class="dv">14</span>], <span class="co"># Volk has 15 title fights, Lopes has 1</span></span>
+<span id="cb27-25"><a href="#cb27-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ko_dif'</span>: [<span class="dv">10</span>],</span>
+<span id="cb27-26"><a href="#cb27-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sub_dif'</span>: [<span class="dv">2</span>],</span>
+<span id="cb27-27"><a href="#cb27-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">'height_dif'</span>: [<span class="op">-</span><span class="dv">5</span>], <span class="co"># 5'6" vs 5'11" (Huge height gap)</span></span>
+<span id="cb27-28"><a href="#cb27-28" aria-hidden="true" tabindex="-1"></a>    <span class="st">'reach_dif'</span>: [<span class="op">-</span><span class="dv">1</span>], <span class="co"># 71" vs 72"</span></span>
+<span id="cb27-29"><a href="#cb27-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">'age_dif'</span>: [<span class="dv">6</span>],</span>
+<span id="cb27-30"><a href="#cb27-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">'sig_str_dif'</span>: [<span class="fl">2.08</span>], <span class="co"># 6.18 vs 4.10 (Landed per minute)</span></span>
+<span id="cb27-31"><a href="#cb27-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_sub_att_dif'</span>: [<span class="op">-</span><span class="fl">1.5</span>],</span>
+<span id="cb27-32"><a href="#cb27-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">'avg_td_dif'</span>: [<span class="fl">0.88</span>], <span class="co"># 1.67 vs 0.79 (Takedowns per 15 min)</span></span>
+<span id="cb27-33"><a href="#cb27-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">'constant_1'</span>: [<span class="dv">1</span>]</span>
+<span id="cb27-34"><a href="#cb27-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb27-35"><a href="#cb27-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-36"><a href="#cb27-36" aria-hidden="true" tabindex="-1"></a>X_rematch <span class="op">=</span> pd.DataFrame(volk_vs_lopes_rematch)</span>
+<span id="cb27-37"><a href="#cb27-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-38"><a href="#cb27-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the prediction</span></span>
+<span id="cb27-39"><a href="#cb27-39" aria-hidden="true" tabindex="-1"></a>prediction <span class="op">=</span> model_fit.predict(X_rematch)</span>
+<span id="cb27-40"><a href="#cb27-40" aria-hidden="true" tabindex="-1"></a>probs <span class="op">=</span> model_fit.predict_proba(X_rematch)</span>
+<span id="cb27-41"><a href="#cb27-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-42"><a href="#cb27-42" aria-hidden="true" tabindex="-1"></a>winner <span class="op">=</span> <span class="st">"VOLKANOVSKI (Red)"</span> <span class="cf">if</span> prediction[<span class="dv">0</span>] <span class="op">==</span> <span class="dv">1</span> <span class="cf">else</span> <span class="st">"LOPES (Blue)"</span></span>
+<span id="cb27-43"><a href="#cb27-43" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Predicted Winner: </span><span class="sc">{</span>winner<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb27-44"><a href="#cb27-44" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Confidence: </span><span class="sc">{</span>probs[<span class="dv">0</span>][prediction[<span class="dv">0</span>]]<span class="sc">:.2%}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Predicted Winner: VOLKANOVSKI (Red)
 Confidence: 100.00%</code></pre>
