@@ -108,32 +108,232 @@ ufc_clean_champ_only = ufc_clean_data[ufc_clean_data["title_bout"]]
 Now we can fit a simple model first so I would like to start with a logistic regression model in which we first have to transform our variable that we are trying to predict (Winner) into 1s and 0s from "Red" and "Blue" respectfully. Since we are using a logistic regression model we can only use numeric predictors and cannot have and NaNs in the data set so we need to prep our data.
 
 ```{python}
-# ufc_clean_log = ufc_clean_champ_only.copy()
-# ufc_clean_log['target'] = ufc_clean_champ_only['Winner'].map({'Red': 1, 'Blue': 0})
-# # the next line of code tells us the counts of NaNs in each column
-# print(ufc_clean_log.isna().sum())
-# features_log = ufc_clean_champ_only.select_dtypes(include=['number'])
-# features_log = features_log.columns[features_log.isna().sum() == 0].tolist()
-# model = ufc_clean_log[features_log + ['target']].dropna()
-# x = model[features_log]
-# y = model['target']
-# x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
-# model_fit = LogisticRegression()
-# model_fit.fit(x_train, y_train)
-# y_preds = model_fit.predict(x_test)
-# print(accuracy_score(y_test, y_preds))
-
+# Here we create a copy of the cleaned dataset
 ufc_clean_log = ufc_clean_champ_only.copy() 
+#Here we conver our target variable into 1s and 0s
 ufc_clean_log['target'] = ufc_clean_log['Winner'].map({'Red': 1, 'Blue': 0})
+#Here we extract only numeric columns
 features_log = ufc_clean_log.select_dtypes(include=['number'])
+#Here we filter so columns have no missing values phfilll check run head on this
 features_log = [col for col in features_log.columns 
                 if ufc_clean_log[col].isna().sum() == 0 and col != 'target']
 model_df = ufc_clean_log[features_log + ['target']].dropna()
+#Here we split the data into predictors and our target variable
 x = model_df[features_log]
 y = model_df['target']
+#Here we split the data and fit the logistic regression model on the training set
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
 model_fit = LogisticRegression(max_iter=1000) 
 model_fit.fit(x_train, y_train)
+#here we test the model on the test set (unseen data)
 y_preds = model_fit.predict(x_test)
 print(accuracy_score(y_test, y_preds))
 ```
+
+Lets see how our model performs on some championship bouts that have happened since the last update of this dataset. We have to make a new observation for the bout in question and use our model to predict the outcome. Since it would be very tedious to get every stat needed for a new observation I decided to use AI to retrieve them. This new observation is a fight that happened Jan 24 in which Gaethje won.
+
+```{python}
+import pandas as pd
+
+# Creating the stats for Gaethje (Red) vs Pimblett (Blue)
+new_fight_stats = {
+    'no_of_rounds': [5],
+    'B_win_by_Decision_Split': [0],
+    'B_win_by_Decision_Unanimous': [6],
+    'B_win_by_KO/TKO': [7],
+    'B_win_by_Submission': [10],
+    'B_wins': [23],
+    'B_Weight_lbs': [155],
+    'R_win_by_Decision_Split': [1],
+    'R_win_by_Decision_Unanimous': [5],
+    'R_win_by_KO/TKO': [20],
+    'R_win_by_Submission': [1],
+    'R_wins': [27],
+    'R_Weight_lbs': [155],
+    'R_age': [37],
+    'B_age': [31],
+    'lose_streak_dif': [0], # Both coming off wins
+    'win_streak_dif': [-6], # Paddy had a longer streak (7 vs 1)
+    'longest_win_streak_dif': [2], # Gaethje's peak vs Paddy's
+    'win_dif': [4],
+    'loss_dif': [1],
+    'total_round_dif': [30], # Gaethje has much more cage time
+    'total_title_bout_dif': [6], # Paddy has never been in a UFC title bout
+    'ko_dif': [13],
+    'sub_dif': [-9],
+    'height_dif': [1], # 5'11 vs 5'10
+    'reach_dif': [-3], # Paddy has a reach advantage (73 vs 70)
+    'age_dif': [6],
+    'sig_str_dif': [1.4], # 6.59 vs 5.19
+    'avg_sub_att_dif': [-1.7],
+    'avg_td_dif': [-0.86],
+    'constant_1': [1]
+}
+
+# Create the observation
+X_new = pd.DataFrame(new_fight_stats)
+
+# --- THE PREDICTION ---
+# 1. Who does the model pick?
+fight_prediction = model_fit.predict(X_new)
+winner_label = "RED (Gaethje)" if fight_prediction[0] == 1 else "BLUE (Pimblett)"
+
+# 2. How confident is it?
+probs = model_fit.predict_proba(X_new)
+confidence = probs[0][1] if fight_prediction[0] == 1 else probs[0][0]
+
+print(f"Predicted Winner: {winner_label}")
+print(f"Model Confidence: {confidence:.2%}")
+```
+
+Our model was right!!! lets try another and I am feeling like our model is performing a little too good lets look at a fight considered the greatest upset in UFC history Adesanya vs. Strickland (Adesanya was a heavy favorite)
+
+```{python}
+import pandas as pd
+
+# Stats for Sean Strickland (Red) vs Israel Adesanya (Blue) - UFC 293
+strickland_vs_izzy = {
+    'no_of_rounds': [5],
+    'B_win_by_Decision_Split': [0],
+    'B_win_by_Decision_Unanimous': [6],
+    'B_win_by_KO/TKO': [15],
+    'B_win_by_Submission': [0],
+    'B_wins': [24],
+    'B_Weight_lbs': [185],
+    'R_win_by_Decision_Split': [2],
+    'R_win_by_Decision_Unanimous': [10],
+    'R_win_by_KO/TKO': [11],
+    'R_win_by_Submission': [4],
+    'R_wins': [27],
+    'R_Weight_lbs': [185],
+    'R_age': [32],
+    'B_age': [34],
+    'lose_streak_dif': [0],
+    'win_streak_dif': [1],   # Strickland was on 2-win streak, Izzy on 1
+    'longest_win_streak_dif': [-1], 
+    'win_dif': [3],
+    'loss_dif': [3],         # Strickland had 5 losses, Izzy had 2
+    'total_round_dif': [8],  # Strickland had more total rounds in MMA
+    'total_title_bout_dif': [-10], # Huge gap: Izzy had 10 title bouts, Sean had 0
+    'ko_dif': [-4],
+    'sub_dif': [4],
+    'height_dif': [-3],      # 6'1 vs 6'4
+    'reach_dif': [-4],       # 76" vs 80"
+    'age_dif': [-2],
+    'sig_str_dif': [1.92],   # 5.86 landed/min vs 3.94 landed/min
+    'avg_sub_att_dif': [0.2],
+    'avg_td_dif': [0.94],    # 1.00 vs 0.06
+    'constant_1': [1]
+}
+
+X_strickland = pd.DataFrame(strickland_vs_izzy)
+
+# Run the prediction
+prob = model_fit.predict_proba(X_strickland)
+print(f"Strickland Win Probability: {prob[0][1]:.2%}")
+print(f"Adesanya Win Probability: {prob[0][0]:.2%}")
+```
+
+As we can see our model predicted that there was over a 99% chance that Adesanya won which shows why this was such a great upset. It displays how it is hard to quantify a wildcard aspect to bouts.
+
+Lets check a toss up fight Strickland vs Du Plessis(odds around -115 and -105)
+
+```{python}
+import pandas as pd
+
+# Stats for Sean Strickland (Red) vs Dricus Du Plessis (Blue) - UFC 297
+strickland_vs_dricus = {
+    'no_of_rounds': [5],
+    'B_win_by_Decision_Split': [0],
+    'B_win_by_Decision_Unanimous': [0],
+    'B_win_by_KO/TKO': [19], 
+    'B_win_by_Submission': [1],
+    'B_wins': [20],
+    'B_Weight_lbs': [185],
+    'R_win_by_Decision_Split': [2],
+    'R_win_by_Decision_Unanimous': [10],
+    'R_win_by_KO/TKO': [11],
+    'R_win_by_Submission': [4],
+    'R_wins': [28],
+    'R_Weight_lbs': [185],
+    'R_age': [32],
+    'B_age': [30],
+    'lose_streak_dif': [0],
+    'win_streak_dif': [-8], # Dricus had a massive 9-fight win streak
+    'longest_win_streak_dif': [-3], 
+    'win_dif': [8],
+    'loss_dif': [3], # Strickland had more experience but more losses
+    'total_round_dif': [24], 
+    'total_title_bout_dif': [1], # Strickland was the champ, Dricus's first title bout
+    'ko_dif': [-8],
+    'sub_dif': [3],
+    'height_dif': [1], # 6'1" vs 6'0"
+    'reach_dif': [0], # Both have a 76" reach
+    'age_dif': [2],
+    'sig_str_dif': [-0.87], # Du Plessis actually had higher volume (6.95 vs 6.08)
+    'avg_sub_att_dif': [-0.8],
+    'avg_td_dif': [-2.72], # Dricus is a much heavier grappler (3.72 vs 1.00)
+    'constant_1': [1]
+}
+
+X_tossup = pd.DataFrame(strickland_vs_dricus)
+
+# Predict!
+prob = model_fit.predict_proba(X_tossup)
+winner = "STRICKLAND (Red)" if prob[0][1] > 0.5 else "DU PLESSIS (Blue)"
+print(f"Predicted Winner: {winner}")
+print(f"Confidence: {max(prob[0]):.2%}")
+```
+
+This was a controversial win but the model predicted it right, to wrap this up lets check the prediction for this weekend's championship bout Volkanovski vs Lopes
+
+```{python}
+import pandas as pd
+
+# Stats for Alexander Volkanovski (Red) vs Diego Lopes (Blue) - UFC 325
+volk_vs_lopes_rematch = {
+    'no_of_rounds': [5],
+    'B_win_by_Decision_Split': [0],
+    'B_win_by_Decision_Unanimous': [3],
+    'B_win_by_KO/TKO': [3],   # Includes recent win over Jean Silva
+    'B_win_by_Submission': [1],
+    'B_wins': [27],
+    'B_Weight_lbs': [145],
+    'R_win_by_Decision_Split': [1],
+    'R_win_by_Decision_Unanimous': [11],
+    'R_win_by_KO/TKO': [13],
+    'R_win_by_Submission': [3],
+    'R_wins': [27],
+    'R_Weight_lbs': [145],
+    'R_age': [37],
+    'B_age': [31],
+    'lose_streak_dif': [0],
+    'win_streak_dif': [-1], # Lopes is on a 1-win streak, Volk technically has 1 win (their last fight)
+    'longest_win_streak_dif': [10], # Volk's legendary 12-fight UFC streak
+    'win_dif': [0], # Both sit at 27 pro wins
+    'loss_dif': [-3], # Volk has 4 losses, Lopes has 7
+    'total_round_dif': [25], # Volk has far more 5-round experience
+    'total_title_bout_dif': [14], # Volk has 15 title fights, Lopes has 1
+    'ko_dif': [10],
+    'sub_dif': [2],
+    'height_dif': [-5], # 5'6" vs 5'11" (Huge height gap)
+    'reach_dif': [-1], # 71" vs 72"
+    'age_dif': [6],
+    'sig_str_dif': [2.08], # 6.18 vs 4.10 (Landed per minute)
+    'avg_sub_att_dif': [-1.5],
+    'avg_td_dif': [0.88], # 1.67 vs 0.79 (Takedowns per 15 min)
+    'constant_1': [1]
+}
+
+X_rematch = pd.DataFrame(volk_vs_lopes_rematch)
+
+# Run the prediction
+prediction = model_fit.predict(X_rematch)
+probs = model_fit.predict_proba(X_rematch)
+
+winner = "VOLKANOVSKI (Red)" if prediction[0] == 1 else "LOPES (Blue)"
+print(f"Predicted Winner: {winner}")
+print(f"Confidence: {probs[0][prediction[0]]:.2%}")
+```
+
+I'm a diego lopes fan so now I hope my model is wrong on this one, but the predicted outcome is similar to what the mainstream opinion is as Volkanovski is considered one of the greatest to ever do it and very experienced.
